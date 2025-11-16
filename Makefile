@@ -22,7 +22,17 @@ clean:
 
 # Run tests
 test:
-	@echo "Running tests..."
+	@echo "Running unit tests..."
+	$(GO) test -v -short ./...
+
+# Run integration tests
+test-integration:
+	@echo "Running integration tests..."
+	$(GO) test -v ./test/integration/...
+
+# Run all tests
+test-all:
+	@echo "Running all tests..."
 	$(GO) test -v ./...
 
 # Install to GOPATH/bin

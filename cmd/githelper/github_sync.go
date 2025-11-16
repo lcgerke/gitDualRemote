@@ -193,7 +193,7 @@ func runGitHubSync(cmd *cobra.Command, args []string) error {
 		repo.GitHub.LastError = errMsg
 		stateMgr.AddRepository(repoName, repo)
 
-		return fmt.Errorf(errMsg)
+		return fmt.Errorf("%s", errMsg)
 	}
 
 	// GitHub is behind - we can sync
