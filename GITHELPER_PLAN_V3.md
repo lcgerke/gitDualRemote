@@ -5,8 +5,8 @@
 A comprehensive Go CLI tool that manages both bare repository workflows and GitHub dual-remote synchronization. This unified tool (`githelper`) combines repository lifecycle management with seamless GitHub backup integration.
 
 **Date**: 2025-11-16
-**Version**: 3.1 (Post-Critique Resolutions)
-**Status**: Architecture Finalized with Resolutions, Ready for Phase 0
+**Version**: 3.2 (Post-Phase 0 Spike)
+**Status**: Phase 0 Complete - Git CLI Wrapper Selected, Ready for Phase 1
 
 ## Architectural Decisions (From /decide Session)
 
@@ -125,6 +125,101 @@ Following architectural review, the following clarifications and updates were ma
 - Decision point: Proceed with go-git or fall back to CLI wrapper
 
 **Timeline:** 2-3 days before Phase 1.
+
+## Phase 0 Results (2025-11-16)
+
+### Spike Complete: Git CLI Wrapper Selected
+
+**Duration**: 2 hours
+**Outcome**: ❌ Do NOT use go-git - Pivot to Git CLI wrapper
+
+**Critical Finding**: go-git's `RemoteConfig` struct does not support git's native `pushurl` configuration, which is essential for dual-push functionality.
+
+#### Test Results: 7/8 Passed, 1 CRITICAL Failure
+
+**✅ What Works in go-git**:
+- Create and clone bare repositories
+- Fetch from multiple remotes
+- Compare commit graphs (divergence detection)
+- SSH key configuration API
+- Push to multiple remotes sequentially
+- Error handling
+
+**❌ What Doesn't Work (CRITICAL)**:
+- **Dual-push configuration**: go-git cannot configure git's native pushurl feature
+- Git native config:
+  ```
+  [remote "origin"]
+    url = bare-repo
+    pushurl = bare-repo
+    pushurl = github
+  ```
+- go-git's limitation:
+  ```go
+  type RemoteConfig struct {
+      URLs []string  // No separate fetch vs push URLs
+  }
+  ```
+
+#### Impact Analysis
+
+**Workaround**: Push to each remote sequentially in application code
+- ❌ Not atomic (loses transaction semantics)
+- ❌ More complex error handling
+- ❌ Can't leverage git's native retry logic
+- ❌ Different behavior from git CLI
+- ⚠️ Estimated +500-800 LOC for custom orchestration
+
+**Decision**: The dual-push feature is core to githelper's value proposition. Emulating it in code adds complexity and loses git's battle-tested implementation.
+
+### Final Decision: Git CLI Wrapper
+
+**Why Git CLI Wrapper Wins**:
+1. ✅ Native dual-push support (atomic, reliable)
+2. ✅ Simpler implementation (use git's features, don't emulate)
+3. ✅ Better error handling (git handles it)
+4. ✅ Smaller codebase (-500 LOC vs workarounds)
+5. ✅ 100% git compatibility (no API limitations)
+6. ⚠️ Requires git binary (acceptable for git workflow tool)
+
+**Updated Implementation**:
+```go
+// internal/git/cli.go
+type Client struct {
+    workdir string
+}
+
+func (c *Client) ConfigureDualPush(remote, bareURL, githubURL string) error {
+    // git remote set-url --add --push origin <url>
+}
+
+func (c *Client) Push(remote string) error {
+    // git push <remote>
+    // Native dual-push automatically handled by git
+}
+```
+
+**See**: `spike/FINDINGS.md` for complete analysis and test results.
+
+### Resolution #9 Update: Git CLI Wrapper Selected
+
+**Updated Decision**: Use Git CLI wrapper for all git operations (no go-git).
+
+**Technology Stack Change**:
+```go
+// REMOVED:
+// github.com/go-git/go-git/v5 v5.11.0
+
+// ADDED:
+// os/exec - shell out to git binary
+// git version requirement: >= 2.0 (for pushurl support)
+```
+
+**Benefits of This Approach**:
+- Leverage git's native features (dual-push, retry, rollback)
+- Simpler codebase
+- Perfect git compatibility
+- Users already have git installed (it's a git tool!)
 
 ## Tool Architecture
 
@@ -583,6 +678,7 @@ $ githelper hooks install
 
 ## Technology Stack
 
+**Go Dependencies**:
 ```go
 require (
     github.com/spf13/cobra v1.8.0           // CLI framework
@@ -593,9 +689,14 @@ require (
     github.com/hashicorp/vault/api v1.10.0  // Vault client
     github.com/google/go-github/v56 v56.0.0 // GitHub API
     gopkg.in/yaml.v3 v3.0.1                 // State file
-    github.com/go-git/go-git/v5 v5.11.0     // Git operations
 )
 ```
+
+**External Requirements**:
+- Git binary >= 2.0 (for pushurl support)
+- Vault server (for configuration and secrets)
+
+**Git Operations**: Git CLI wrapper using `os/exec` (no go-git dependency)
 
 ## Security Model (Decision 11)
 
@@ -792,13 +893,15 @@ $ githelper doctor --repo myproject
 
 ---
 
-**Version**: 3.1
-**Status**: Architecture Finalized with Critique Resolutions
-**Ready**: Implementation Phase 0 (go-git validation spike)
-**Timeline**: Phase 0 (2-3 days) → Phases 1-5 (7-8 weeks)
-**Author**: lcgerke + Claude (post-critique resolutions)
+**Version**: 3.2
+**Status**: Phase 0 Complete - Git CLI Wrapper Selected
+**Ready**: Implementation Phase 1
+**Timeline**: Phases 1-5 (7-8 weeks)
+**Author**: lcgerke + Claude
 
-## Change Summary (3.0 → 3.1)
+## Change Summary
+
+### 3.0 → 3.1 (Critique Resolutions)
 
 1. **State Management**: Clarified hybrid ownership (git config authoritative, state file reconstructable)
 2. **Hook Installation**: Added automatic backup mechanism for safety
@@ -806,3 +909,15 @@ $ githelper doctor --repo myproject
 4. **Testing**: Committed to comprehensive edge case coverage (3-4 weeks)
 5. **Git Operations**: Pure go-git with Phase 0 validation spike before commitment
 6. **Timeline**: Extended Phase 5 for comprehensive testing, added Phase 0
+
+### 3.1 → 3.2 (Phase 0 Spike Results)
+
+1. **Phase 0 Complete**: Validated go-git library (2 hours of testing)
+2. **Critical Finding**: go-git cannot configure git's native pushurl (dual-push blocker)
+3. **Decision**: Pivot to Git CLI wrapper approach
+4. **Technology Stack**: Removed go-git dependency, using os/exec + git binary
+5. **Benefits**: Simpler code (-500 LOC), native git features, 100% compatibility
+6. **Requirements**: Added git binary >= 2.0 as external dependency
+7. **Documentation**: Added spike/FINDINGS.md with complete test results
+
+**Key Insight**: Using git's native features is simpler than emulating them. The dual-push feature is core to githelper's value, and git already does it perfectly.
