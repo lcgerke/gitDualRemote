@@ -5,8 +5,8 @@
 A comprehensive Go CLI tool that manages both bare repository workflows and GitHub dual-remote synchronization. This unified tool (`githelper`) combines repository lifecycle management with seamless GitHub backup integration.
 
 **Date**: 2025-11-16
-**Version**: 3.0 (Post-Ultrathink Critique)
-**Status**: Architecture Finalized, Ready for Implementation
+**Version**: 3.1 (Post-Critique Resolutions)
+**Status**: Architecture Finalized with Resolutions, Ready for Phase 0
 
 ## Architectural Decisions (From /decide Session)
 
@@ -28,6 +28,103 @@ A comprehensive Go CLI tool that manages both bare repository workflows and GitH
 | 12 | **GitHub Integration** | Direct API via go-github library | Seamless integration, no `gh` CLI dependency, full control |
 | 13 | **Hook Installation** | Automatic (no prompt) | Opinionated but reliable, `githelper hooks uninstall` available |
 | 14 | **Doctor Command** | Comprehensive diagnostics | Vault, SSH, git config, remotes, credentials, sync status |
+
+## Critique Resolutions (2025-11-16)
+
+Following architectural review, the following clarifications and updates were made:
+
+### Resolution #3: State Management Ownership Model
+
+**Clarification on Decision 10:** Hybrid ownership model to prevent divergence issues.
+
+**Ownership Rules:**
+- **Git config (`.git/config`)**: Source of truth for all git operations
+  - Remote URLs (authoritative)
+  - SSH command configuration (authoritative)
+  - Branch tracking information
+- **State file (`~/.githelper/state.yaml`)**: Metadata and inventory only
+  - Repository inventory (which repos githelper manages)
+  - Creation timestamps, repository types
+  - Cached sync status (hints, not authoritative)
+- **Vault**: Configuration and secrets (fetched as needed)
+  - Global configuration
+  - SSH keys and PATs
+  - Per-repo credential overrides
+
+**Conflict Resolution:** If git config and state file diverge, git config always wins. The tool will detect divergence and auto-repair state file from git config.
+
+**Reconstruction:** State file can be reconstructed by scanning git repositories if lost.
+
+### Resolution #4: Hook Installation Safety
+
+**Update to Decision 13:** Automatic installation with backup protection.
+
+**Behavior:**
+1. Check for existing hooks (`.git/hooks/pre-push`, `.git/hooks/post-push`)
+2. If exists: Automatically backup to `.git/hooks/<hook>.githelper-backup`
+3. Install githelper hooks
+4. Output: `✓ Installed hooks (backed up existing pre-push to pre-push.githelper-backup)`
+5. User can manually restore from backup if needed
+
+**Rationale:** Balances automation (no prompts) with safety (preserves user's work). More straightforward than hook chaining while preventing data loss.
+
+### Resolution #6: SSH Key Management Philosophy
+
+**Clarification on Decision 11:** Vault optimized for convenience, not security theater.
+
+**Design Goal:** Use Vault as centralized configuration database for multi-machine convenience, not as ephemeral secrets engine.
+
+**Workflow:**
+- SSH keys stored in Vault: `secret/githelper/github/default_ssh`
+- On first use: Download to `~/.ssh/github_*` with 600 permissions
+- Subsequent uses: Key remains on disk, git uses directly
+- New machine: `githelper doctor` auto-downloads keys from Vault
+
+**Accepted Trade-off:** Keys exist on disk (not ephemeral). This is acceptable because:
+- SSH keys are long-lived credentials (not rotated frequently)
+- Vault provides convenience (configure once, use everywhere)
+- Standard SSH security practices apply (encrypted disk, 600 permissions)
+
+### Resolution #8: Testing Strategy
+
+**Expanded Decision:** Comprehensive testing with full edge case coverage.
+
+**Testing Approach:**
+- **Unit tests**: All internal packages with extensive mocking
+- **Edge case coverage**: All failure modes tested
+  - Vault unreachable
+  - GitHub API failures and rate limits
+  - SSH connection failures (partial and complete)
+  - Divergence scenarios (ahead, behind, diverged)
+  - Filesystem permission issues
+  - Corrupted state files
+- **Integration tests**: End-to-end workflows with mocked external services
+- **Test infrastructure**: Mock Vault server, GitHub API, SSH connections
+
+**Timeline Impact:** Allocate 3-4 weeks for comprehensive test development (Phase 5 extended).
+
+### Resolution #9: Git Operations Implementation
+
+**Update to Technology Stack:** Pure go-git with Phase 0 validation.
+
+**Decision:** Use `github.com/go-git/go-git/v5` for all git operations (no CLI shelling).
+
+**Benefits:**
+- No external git binary dependency
+- Programmatic control over all operations
+- Better error handling and testability
+- Consistent behavior across environments
+
+**Risk Mitigation:** Add Phase 0 spike to validate go-git capabilities before architecture commitment.
+
+**Phase 0 Deliverables:**
+- Proof-of-concept: Remote management with go-git
+- Validation: Dual-push functionality
+- Test: SSH key configuration via go-git
+- Test: Divergence detection (commit graph comparison)
+- Decision point: Proceed with go-git or fall back to CLI wrapper
+
+**Timeline:** 2-3 days before Phase 1.
 
 ## Tool Architecture
 
@@ -412,11 +509,26 @@ Repositories Using Each Credential:
 Purpose: Track where all credentials live (not security audit)
 ```
 
-## Hook Installation (Decision 13)
+## Hook Installation (Decision 13 + Resolution #4)
 
-### Automatic Installation
+### Automatic Installation with Backup
 
 Hooks installed automatically during `githelper github setup`:
+
+**Installation Process:**
+1. Check for existing hooks in `.git/hooks/`
+2. If found, backup to `.git/hooks/<hook>.githelper-backup`
+3. Install githelper hook
+4. Display backup confirmation
+
+**Example output:**
+```bash
+$ githelper github setup myproject --user lcgerke
+...
+✓ Backed up existing pre-push hook to pre-push.githelper-backup
+✓ Installed pre-push hook
+✓ Installed post-push hook
+```
 
 **`.git/hooks/pre-push`:**
 ```bash
@@ -436,12 +548,27 @@ githelper github test --quiet || {
 githelper github status --update-state
 ```
 
-### Uninstallation
+### Manual Hook Management
 
+**Restore from backup:**
+```bash
+# User manually restores
+$ mv .git/hooks/pre-push.githelper-backup .git/hooks/pre-push
+```
+
+**Uninstall:**
 ```bash
 $ githelper hooks uninstall
 ✓ Removed .git/hooks/pre-push
 ✓ Removed .git/hooks/post-push
+Note: Backups remain at *.githelper-backup if you need to restore
+```
+
+**Reinstall (overwrites existing):**
+```bash
+$ githelper hooks install
+✓ Backed up existing pre-push hook to pre-push.githelper-backup
+✓ Installed hooks
 ```
 
 ## Platform Support (Decision 7)
@@ -504,10 +631,22 @@ The doctor command's `--credentials` flag is explicitly for **tracking where cre
 
 ## Implementation Phases
 
+### Phase 0: Go-git Validation Spike (2-3 days)
+- [ ] Proof-of-concept: Create and clone bare repository using go-git
+- [ ] Validation: Configure multiple push URLs (dual-push setup)
+- [ ] Test: SSH key configuration and authentication via go-git
+- [ ] Test: Fetch from multiple remotes and compare commit graphs
+- [ ] Test: Push to multiple remotes programmatically
+- [ ] Edge cases: Handle auth failures, network errors, divergence
+- [ ] **Decision point**: Proceed with go-git or pivot to CLI wrapper
+- [ ] Document findings and API patterns
+
 ### Phase 1: Core Infrastructure (Week 1)
 - [ ] Project scaffolding (cobra, zap, structure)
 - [ ] Vault integration (config retrieval, caching)
 - [ ] State file management (`~/.githelper/state.yaml`)
+  - [ ] Implement conflict detection (state file vs git config)
+  - [ ] Auto-repair: sync state file from git config when diverged
 - [ ] TTY detection and output modes (human/JSON)
 - [ ] Basic `githelper repo create` (bare repo only)
 
@@ -518,6 +657,10 @@ The doctor command's `--credentials` flag is explicitly for **tracking where cre
 - [ ] Repository-local SSH config (`core.sshCommand`)
 - [ ] Dual-push remote configuration
 - [ ] `githelper github setup` command
+- [ ] Hook installation with backup logic
+  - [ ] Detect existing hooks
+  - [ ] Backup to `.githelper-backup` suffix
+  - [ ] Install githelper hooks
 
 ### Phase 3: Sync & Recovery (Week 3)
 - [ ] Synchronous dual-push implementation
@@ -525,7 +668,6 @@ The doctor command's `--credentials` flag is explicitly for **tracking where cre
 - [ ] Partial failure handling
 - [ ] State tracking (sync status, retry flags)
 - [ ] `githelper github sync --retry-github`
-- [ ] Hook installation (pre-push, post-push)
 
 ### Phase 4: Diagnostics & Polish (Week 4)
 - [ ] Doctor command (full health check)
@@ -535,13 +677,35 @@ The doctor command's `--credentials` flag is explicitly for **tracking where cre
 - [ ] Comprehensive error messages
 - [ ] Help system
 
-### Phase 5: Testing & Documentation (Week 5)
-- [ ] Unit tests (each internal package)
-- [ ] Integration tests (end-to-end workflows)
-- [ ] Workflow guide (`docs/WORKFLOW.md`)
-- [ ] Vault setup guide (`docs/VAULT.md`)
-- [ ] README with examples
-- [ ] Release automation
+### Phase 5: Testing & Documentation (3-4 weeks)
+- [ ] **Unit tests** (each internal package with mocks)
+  - [ ] Vault client (mock Vault server)
+  - [ ] GitHub client (mock API responses)
+  - [ ] SSH operations (mock connections)
+  - [ ] Git operations (mock go-git interactions)
+  - [ ] State management (conflict resolution)
+- [ ] **Edge case tests** (all failure modes)
+  - [ ] Vault unreachable (use cache)
+  - [ ] GitHub API failures (rate limits, auth failures)
+  - [ ] SSH failures (partial and complete)
+  - [ ] Divergence scenarios (ahead, behind, diverged)
+  - [ ] Filesystem permission issues
+  - [ ] Corrupted state files
+  - [ ] Hook backup scenarios (existing hooks)
+- [ ] **Integration tests** (end-to-end workflows)
+  - [ ] Full repository creation + GitHub setup
+  - [ ] Dual-push success and partial failure
+  - [ ] Sync recovery after divergence
+  - [ ] Doctor diagnostics with various failure modes
+- [ ] **Test infrastructure**
+  - [ ] Mock Vault server setup
+  - [ ] Mock GitHub API server
+  - [ ] Test fixture repositories
+- [ ] **Documentation**
+  - [ ] Workflow guide (`docs/WORKFLOW.md`)
+  - [ ] Vault setup guide (`docs/VAULT.md`)
+  - [ ] README with examples
+  - [ ] Release automation
 
 ## Success Criteria
 
@@ -628,7 +792,17 @@ $ githelper doctor --repo myproject
 
 ---
 
-**Version**: 3.0
-**Status**: Architecture Finalized
-**Ready**: Implementation Phase 1
-**Author**: lcgerke + Claude (post-ultrathink critique)
+**Version**: 3.1
+**Status**: Architecture Finalized with Critique Resolutions
+**Ready**: Implementation Phase 0 (go-git validation spike)
+**Timeline**: Phase 0 (2-3 days) → Phases 1-5 (7-8 weeks)
+**Author**: lcgerke + Claude (post-critique resolutions)
+
+## Change Summary (3.0 → 3.1)
+
+1. **State Management**: Clarified hybrid ownership (git config authoritative, state file reconstructable)
+2. **Hook Installation**: Added automatic backup mechanism for safety
+3. **SSH Keys**: Documented Vault-for-convenience philosophy (not ephemeral secrets)
+4. **Testing**: Committed to comprehensive edge case coverage (3-4 weeks)
+5. **Git Operations**: Pure go-git with Phase 0 validation spike before commitment
+6. **Timeline**: Extended Phase 5 for comprehensive testing, added Phase 0
