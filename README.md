@@ -4,16 +4,16 @@ A comprehensive Go CLI tool that manages both bare repository workflows and GitH
 
 ## Status
 
-**Current Version**: 3.2 (Phase 2 Complete)
+**Current Version**: 4.0 (Phase 4 Complete)
 
 - ✅ **Phase 0**: Go-git validation spike (Complete)
 - ✅ **Phase 1**: Core infrastructure (Complete)
 - ✅ **Phase 2**: GitHub integration (Complete)
-- ⬜ **Phase 3**: Sync & recovery
-- ⬜ **Phase 4**: Diagnostics & polish
+- ✅ **Phase 3**: Sync & recovery (Complete)
+- ✅ **Phase 4**: Diagnostics & polish (Complete)
 - ⬜ **Phase 5**: Testing & documentation
 
-## Features (Phase 1 + 2)
+## Features
 
 ### Phase 1: Core Infrastructure
 - 🚀 **Bare Repository Management**: Create and manage bare repositories
@@ -31,6 +31,22 @@ A comprehensive Go CLI tool that manages both bare repository workflows and GitH
 - 🎯 **Repository-Local SSH**: Per-repo SSH keys (no global pollution)
 - 🪝 **Smart Hooks**: Pre-push checks with automatic backup
 - ✅ **Status Tracking**: Monitor GitHub sync state
+
+### Phase 3: Sync & Recovery
+- 🔍 **Divergence Detection**: Smart commit graph comparison
+- 🔄 **Manual Sync**: Recover from partial push failures
+- 📊 **State Tracking**: Track sync status (synced/behind/diverged)
+- 🎯 **Selective Sync**: Push only missing commits
+- ⚠️ **Conflict Detection**: Identify when manual merge needed
+- 📝 **Post-Push Tracking**: Automatic state updates via hooks
+
+### Phase 4: Diagnostics & Polish
+- 🔍 **Doctor Command**: Comprehensive health checks
+- 🔧 **Auto-Fix**: Automatically repair common issues
+- 📋 **Credential Inventory**: Track all SSH keys and PATs
+- 💡 **Enhanced Errors**: User-friendly error messages with hints
+- 📊 **Structured Diagnostics**: Human and JSON output
+- 🎯 **Repository Filtering**: Check specific repos
 
 ## Quick Start
 
