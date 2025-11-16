@@ -51,4 +51,4 @@ secrets.yml
 secrets.yaml
 config/secrets.*
 
-githelper
+/githelper

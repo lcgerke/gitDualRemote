@@ -4,17 +4,18 @@ A comprehensive Go CLI tool that manages both bare repository workflows and GitH
 
 ## Status
 
-**Current Version**: 3.2 (Phase 1 Complete)
+**Current Version**: 3.2 (Phase 2 Complete)
 
 - ✅ **Phase 0**: Go-git validation spike (Complete)
 - ✅ **Phase 1**: Core infrastructure (Complete)
-- ⬜ **Phase 2**: GitHub integration
+- ✅ **Phase 2**: GitHub integration (Complete)
 - ⬜ **Phase 3**: Sync & recovery
 - ⬜ **Phase 4**: Diagnostics & polish
 - ⬜ **Phase 5**: Testing & documentation
 
-## Features (Phase 1)
+## Features (Phase 1 + 2)
 
+### Phase 1: Core Infrastructure
 - 🚀 **Bare Repository Management**: Create and manage bare repositories
 - 📂 **Local Clones**: Automatically clone to local working directories
 - ⚙️ **Configuration Management**: Vault-backed config with 24h caching
@@ -22,6 +23,14 @@ A comprehensive Go CLI tool that manages both bare repository workflows and GitH
 - 🎨 **Smart Output**: TTY detection with human/JSON formats
 - 🔧 **Git CLI Wrapper**: Native git operations via CLI
 - 📦 **Repository Types**: Extensible initialization (Go, Python, etc.)
+
+### Phase 2: GitHub Integration ⭐
+- 🔐 **SSH Key Management**: Vault-based SSH key retrieval and deployment
+- 📡 **GitHub API**: Create repositories, test connectivity
+- 🔀 **Dual-Push** (KEY FEATURE): Single `git push` → both bare repo AND GitHub
+- 🎯 **Repository-Local SSH**: Per-repo SSH keys (no global pollution)
+- 🪝 **Smart Hooks**: Pre-push checks with automatic backup
+- ✅ **Status Tracking**: Monitor GitHub sync state
 
 ## Quick Start
 
@@ -58,14 +67,18 @@ EOF
 ### Usage
 
 ```bash
-# Create a repository
-./githelper repo create myproject --type go --format human
-
-# List repositories
+# Phase 1: Repository Management
+./githelper repo create myproject --type go
 ./githelper repo list
 
-# JSON output
-./githelper repo list --format json
+# Phase 2: GitHub Integration
+./githelper github setup myproject --create --user lcgerke
+./githelper github status myproject
+./githelper github test myproject
+
+# Now git push → pushes to BOTH bare repo AND GitHub!
+cd repos/myproject
+git push  # Automatically pushes to both remotes
 ```
 
 ## Documentation
@@ -73,6 +86,7 @@ EOF
 - [Implementation Plan (v3.2)](GITHELPER_PLAN_V3.md) - Complete architecture and design
 - [Phase 0 Spike Results](spike/FINDINGS.md) - Go-git evaluation and decision
 - [Phase 1 Testing Guide](docs/PHASE1_TESTING.md) - How to test Phase 1 features
+- [Phase 2 Notes](docs/PHASE2_NOTES.md) - GitHub integration implementation
 
 ## Architecture
 

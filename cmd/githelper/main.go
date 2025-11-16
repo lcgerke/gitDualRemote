@@ -42,6 +42,7 @@ func init() {
 
 	// Add subcommands
 	rootCmd.AddCommand(repoCmd)
+	rootCmd.AddCommand(githubCmd)
 }
 
 func main() {
