@@ -48,20 +48,6 @@ func (c *Client) SetupDualPush(remoteName, fetchURL, bareURL, githubURL string) 
 	return nil
 }
 
-// GetPushURLs returns all push URLs for a remote
-func (c *Client) GetPushURLs(remoteName string) ([]string, error) {
-	output, err := c.run("remote", "get-url", "--push", "--all", remoteName)
-	if err != nil {
-		return nil, err
-	}
-
-	if output == "" {
-		return []string{}, nil
-	}
-
-	return splitLines(output), nil
-}
-
 // VerifyDualPush checks that dual-push is configured correctly
 func (c *Client) VerifyDualPush(remoteName, bareURL, githubURL string) (bool, error) {
 	pushURLs, err := c.GetPushURLs(remoteName)
@@ -87,27 +73,4 @@ func (c *Client) VerifyDualPush(remoteName, bareURL, githubURL string) (bool, er
 	}
 
 	return hasBare && hasGitHub, nil
-}
-
-func splitLines(s string) []string {
-	if s == "" {
-		return []string{}
-	}
-
-	var lines []string
-	current := ""
-	for _, r := range s {
-		if r == '\n' {
-			if current != "" {
-				lines = append(lines, current)
-				current = ""
-			}
-		} else {
-			current += string(r)
-		}
-	}
-	if current != "" {
-		lines = append(lines, current)
-	}
-	return lines
 }

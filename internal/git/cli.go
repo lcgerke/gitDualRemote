@@ -72,6 +72,12 @@ func (c *Client) AddRemote(name, url string) error {
 	return err
 }
 
+// RemoveRemote removes a remote
+func (c *Client) RemoveRemote(name string) error {
+	_, err := c.run("remote", "remove", name)
+	return err
+}
+
 // SetURL sets the fetch URL for a remote
 func (c *Client) SetURL(remote, url string) error {
 	_, err := c.run("remote", "set-url", remote, url)
@@ -168,6 +174,20 @@ func (c *Client) GetCurrentBranch() (string, error) {
 // GetRemoteURL gets the URL for a remote
 func (c *Client) GetRemoteURL(remote string) (string, error) {
 	return c.run("remote", "get-url", remote)
+}
+
+// GetPushURLs gets all push URLs for a remote
+func (c *Client) GetPushURLs(remote string) ([]string, error) {
+	output, err := c.run("remote", "get-url", "--push", "--all", remote)
+	if err != nil {
+		return nil, err
+	}
+
+	if output == "" {
+		return []string{}, nil
+	}
+
+	return strings.Split(output, "\n"), nil
 }
 
 // ListRemotes lists all remotes

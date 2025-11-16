@@ -15,4 +15,5 @@ func init() {
 	githubCmd.AddCommand(githubSetupCmd)
 	githubCmd.AddCommand(githubStatusCmd)
 	githubCmd.AddCommand(githubCheckCmd)
+	githubCmd.AddCommand(githubSyncCmd)
 }

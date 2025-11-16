@@ -69,6 +69,33 @@ func runGitHubStatus(cmd *cobra.Command, args []string) error {
 		pushURLs = []string{}
 	}
 
+	// If --update-state, check actual divergence and update
+	if updateState {
+		// Try to check real divergence
+		// Use main branch by default
+		status, err := gitClient.CheckDivergence("origin", "origin", "main")
+		if err == nil {
+			// Update state based on actual status
+			if status.InSync {
+				repo.GitHub.SyncStatus = "synced"
+				repo.GitHub.NeedsRetry = false
+				repo.GitHub.LastError = ""
+			} else if status.GitHubAhead > 0 {
+				repo.GitHub.SyncStatus = "diverged"
+			} else if status.BareAhead > 0 {
+				repo.GitHub.SyncStatus = "behind"
+				repo.GitHub.NeedsRetry = true
+			}
+
+			// Save updated state
+			if err := stateMgr.AddRepository(repoName, repo); err != nil {
+				if !quiet {
+					out.Warning(fmt.Sprintf("Failed to update state: %v", err))
+				}
+			}
+		}
+	}
+
 	if out.IsJSON() {
 		out.JSON(map[string]interface{}{
 			"repository":   repoName,
