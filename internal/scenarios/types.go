@@ -105,11 +105,12 @@ type WorkingTreeState struct {
 	ID          string `json:"id"`          // W1-W5
 	Description string `json:"description"` // Human-readable
 
-	Clean         bool     `json:"clean"`
-	StagedFiles   []string `json:"staged_files,omitempty"`
-	UnstagedFiles []string `json:"unstaged_files,omitempty"`
-	UntrackedFiles []string `json:"untracked_files,omitempty"`
-	ConflictFiles []string `json:"conflict_files,omitempty"`
+	Clean              bool     `json:"clean"`
+	StagedFiles        []string `json:"staged_files,omitempty"`
+	UnstagedFiles      []string `json:"unstaged_files,omitempty"`
+	UntrackedFiles     []string `json:"untracked_files,omitempty"`
+	ConflictFiles      []string `json:"conflict_files,omitempty"`
+	OrphanedSubmodules []string `json:"orphaned_submodules,omitempty"` // Submodules in index but not in .gitmodules
 }
 
 // CorruptionState describes repository health issues

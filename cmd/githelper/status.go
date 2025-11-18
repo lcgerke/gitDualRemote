@@ -220,6 +220,12 @@ func printStatusReport(out *ui.Output, state *scenarios.RepositoryState, showFix
 		if len(state.WorkingTree.ConflictFiles) > 0 {
 			out.Error(fmt.Sprintf("  Conflicts: %d files", len(state.WorkingTree.ConflictFiles)))
 		}
+		if len(state.WorkingTree.OrphanedSubmodules) > 0 {
+			out.Warning(fmt.Sprintf("  ⚠️  Orphaned submodules: %d (in index but not in .gitmodules)", len(state.WorkingTree.OrphanedSubmodules)))
+			for _, sub := range state.WorkingTree.OrphanedSubmodules {
+				out.Warning(fmt.Sprintf("    - %s", sub))
+			}
+		}
 		fmt.Println()
 	}
 

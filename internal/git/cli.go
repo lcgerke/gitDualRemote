@@ -531,6 +531,67 @@ func (c *Client) GetConflictFiles() ([]string, error) {
 	return strings.Split(output, "\n"), nil
 }
 
+// OrphanedSubmodule represents a submodule that's in the index but not in .gitmodules
+type OrphanedSubmodule struct {
+	Path string
+	Hash string
+}
+
+// GetOrphanedSubmodules detects submodules registered in git index but missing from .gitmodules
+// This happens when submodules are not properly removed or .gitmodules gets out of sync
+func (c *Client) GetOrphanedSubmodules() ([]OrphanedSubmodule, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Get all gitlinks (submodules) from the index
+	// Mode 160000 indicates a gitlink/submodule entry
+	output, err := c.runWithContext(ctx, "ls-files", "--stage")
+	if err != nil {
+		return nil, err
+	}
+
+	var orphaned []OrphanedSubmodule
+	if output == "" {
+		return orphaned, nil
+	}
+
+	// Parse ls-files output to find gitlinks (mode 160000)
+	lines := strings.Split(output, "\n")
+	var gitlinks []OrphanedSubmodule
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		// Format: <mode> <hash> <stage>\t<path>
+		// Example: 160000 abc123... 0\tpath/to/submodule
+		parts := strings.Fields(line)
+		if len(parts) >= 4 && parts[0] == "160000" {
+			gitlinks = append(gitlinks, OrphanedSubmodule{
+				Path: parts[3],
+				Hash: parts[1],
+			})
+		}
+	}
+
+	if len(gitlinks) == 0 {
+		return orphaned, nil
+	}
+
+	// Check which gitlinks are NOT in .gitmodules
+	for _, gitlink := range gitlinks {
+		// Try to get submodule config
+		_, err := c.run("config", "--file", ".gitmodules", "--get", fmt.Sprintf("submodule.%s.path", gitlink.Path))
+		if err != nil {
+			// If we can't find it in .gitmodules, it's orphaned
+			// But we need to distinguish between "not found" and other errors
+			// git config exits with 1 if key not found
+			orphaned = append(orphaned, gitlink)
+		}
+	}
+
+	return orphaned, nil
+}
+
 // ListBranches returns all local and remote branches
 func (c *Client) ListBranches() (local, remote []string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

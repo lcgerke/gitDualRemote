@@ -168,9 +168,21 @@ func runGitHubSetup(cmd *cobra.Command, args []string) error {
 	if !exists {
 		if createRepo {
 			out.Infof("Creating GitHub repository: %s/%s...", githubUser, githubRepo)
-			_, err := ghClient.CreateRepository(githubRepo, fmt.Sprintf("%s repository", repoName), privateRepo)
-			if err != nil {
-				return fmt.Errorf("failed to create GitHub repository: %w", err)
+
+			// Prefer gh CLI if available (doesn't require PAT from Vault)
+			if ghclient.CheckGHCLIAvailable() && ghclient.CheckGHAuthenticated() {
+				out.Info("Using gh CLI for repository creation")
+				err := ghClient.CreateRepositoryViaGH(githubRepo, fmt.Sprintf("%s repository", repoName), privateRepo)
+				if err != nil {
+					return fmt.Errorf("failed to create GitHub repository via gh CLI: %w", err)
+				}
+			} else {
+				// Fall back to API method (requires PAT)
+				out.Info("Using GitHub API for repository creation")
+				_, err := ghClient.CreateRepository(githubRepo, fmt.Sprintf("%s repository", repoName), privateRepo)
+				if err != nil {
+					return fmt.Errorf("failed to create GitHub repository: %w", err)
+				}
 			}
 			out.Success(fmt.Sprintf("Created GitHub repository: https://github.com/%s/%s", githubUser, githubRepo))
 		} else {

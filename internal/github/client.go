@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
+	"os/exec"
 
 	"github.com/google/go-github/v56/github"
 	"golang.org/x/oauth2"
@@ -100,4 +101,78 @@ func (c *Client) GetSSHURL(owner, repo string) (string, error) {
 	}
 
 	return *repository.SSHURL, nil
+}
+
+// CheckGHCLIAvailable checks if the gh CLI is installed and available
+func CheckGHCLIAvailable() bool {
+	_, err := exec.LookPath("gh")
+	return err == nil
+}
+
+// CheckGHAuthenticated checks if gh CLI is authenticated
+func CheckGHAuthenticated() bool {
+	if !CheckGHCLIAvailable() {
+		return false
+	}
+
+	cmd := exec.Command("gh", "auth", "status")
+	err := cmd.Run()
+	return err == nil
+}
+
+// CreateRepositoryViaGH creates a GitHub repository using the gh CLI
+// This is an alternative to CreateRepository that doesn't require a PAT
+func (c *Client) CreateRepositoryViaGH(name, description string, private bool) error {
+	if name == "" {
+		return fmt.Errorf("repository name cannot be empty")
+	}
+
+	if !CheckGHCLIAvailable() {
+		return fmt.Errorf("gh CLI is not installed")
+	}
+
+	if !CheckGHAuthenticated() {
+		return fmt.Errorf("gh CLI is not authenticated - run 'gh auth login'")
+	}
+
+	// Build the gh repo create command
+	args := []string{"repo", "create", name}
+
+	// Add description if provided
+	if description != "" {
+		args = append(args, "--description", description)
+	}
+
+	// Add visibility flag
+	if private {
+		args = append(args, "--private")
+	} else {
+		args = append(args, "--public")
+	}
+
+	// Execute the command
+	cmd := exec.Command("gh", args...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to create repository via gh: %w\nOutput: %s", err, string(output))
+	}
+
+	return nil
+}
+
+// CreateRepositoryViaGHWithCheck creates a repository via gh CLI with existence check
+func (c *Client) CreateRepositoryViaGHWithCheck(owner, name, description string, private bool) error {
+	// First check if repository already exists
+	exists, err := c.RepositoryExists(owner, name)
+	if err != nil {
+		// If we can't check (e.g., no PAT), try to create anyway
+		// gh CLI will fail gracefully if it already exists
+		return c.CreateRepositoryViaGH(name, description, private)
+	}
+
+	if exists {
+		return fmt.Errorf("repository %s/%s already exists", owner, name)
+	}
+
+	return c.CreateRepositoryViaGH(name, description, private)
 }

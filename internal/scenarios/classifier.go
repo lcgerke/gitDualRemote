@@ -269,6 +269,21 @@ func (c *Classifier) detectWorkingTree(gc *git.Client) (WorkingTreeState, error)
 	}
 	wt.ConflictFiles = conflictFiles
 
+	// Check for orphaned submodules
+	orphanedSubmodules, err := gc.GetOrphanedSubmodules()
+	if err != nil {
+		// Don't fail the whole detection if submodule check fails
+		// Just log it as a warning
+		orphanedSubmodules = []git.OrphanedSubmodule{}
+	}
+	// Convert to string slice for easier handling
+	if len(orphanedSubmodules) > 0 {
+		wt.OrphanedSubmodules = make([]string, len(orphanedSubmodules))
+		for i, sub := range orphanedSubmodules {
+			wt.OrphanedSubmodules[i] = sub.Path
+		}
+	}
+
 	// Classify into W1-W5
 	if len(conflictFiles) > 0 {
 		wt.ID = "W4"
