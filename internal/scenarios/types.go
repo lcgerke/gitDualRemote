@@ -1,6 +1,7 @@
 package scenarios
 
 import (
+	"encoding/json"
 	"time"
 )
 
@@ -37,7 +38,7 @@ type Duration struct {
 
 // MarshalJSON implements json.Marshaler
 func (d Duration) MarshalJSON() ([]byte, error) {
-	return []byte(string(rune(d.Milliseconds()))), nil
+	return json.Marshal(d.Milliseconds())
 }
 
 // ExistenceState describes which repository locations exist
