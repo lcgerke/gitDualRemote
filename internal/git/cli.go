@@ -424,21 +424,28 @@ func (c *Client) CanReachRemote(remote string) bool {
 }
 
 // LocalExists checks if repository exists locally
+// Returns true and repository root if in a git repository (from any subdirectory)
 func (c *Client) LocalExists() (bool, string) {
 	if c.workdir == "" {
 		return false, ""
 	}
 
-	gitDir := filepath.Join(c.workdir, ".git")
-	if _, err := os.Stat(gitDir); err == nil {
-		return true, c.workdir
+	// Use git to find repository root - works from any subdirectory
+	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
+	cmd.Dir = c.workdir
+	output, err := cmd.Output()
+	if err == nil {
+		// Normal git repository (non-bare)
+		repoRoot := strings.TrimSpace(string(output))
+		return true, repoRoot
 	}
 
-	// Check if workdir itself is a git directory (bare repo)
-	if _, err := os.Stat(filepath.Join(c.workdir, "HEAD")); err == nil {
-		if _, err := os.Stat(filepath.Join(c.workdir, "refs")); err == nil {
-			return true, c.workdir
-		}
+	// Check if workdir itself is a bare repository
+	cmd = exec.Command("git", "rev-parse", "--is-bare-repository")
+	cmd.Dir = c.workdir
+	output, err = cmd.Output()
+	if err == nil && strings.TrimSpace(string(output)) == "true" {
+		return true, c.workdir
 	}
 
 	return false, ""
