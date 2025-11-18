@@ -1,0 +1,375 @@
+# GitHelper Corpus Test Repository Manifest
+#
+# This file defines the repositories to test during corpus validation.
+# Copy this to repos.yaml and customize for your environment.
+
+version: "1.0"
+description: "GitHelper scenario classifier corpus test suite"
+
+# Caching configuration
+cache_enabled: true
+cache_ttl: "7d"  # Cache repos for 7 days (valid: "Xd", "Xh", "Xm")
+max_concurrent: 5  # Maximum parallel clones/tests
+
+repos:
+  # ==========================================================================
+  # YOUR MANAGED REPOSITORIES (Replace with your actual repos)
+  # ==========================================================================
+  #
+  # Add 30 of your production repositories that use gitDualRemote here.
+  # These should include various states: synced, diverged, ahead, behind, etc.
+  #
+  # Example:
+  # - name: "myproject-backend"
+  #   url: "git@core-server.example.com:team/backend.git"
+  #   type: "managed"
+  #   expected:
+  #     existence: E1
+  #     sync: S1
+  #     working_tree: W1
+  #     corruption: C1
+  #   notes: "Production backend service"
+  #   tags: ["production", "backend"]
+  #
+  # INSTRUCTIONS:
+  # 1. Replace the URLs below with your actual Core git server URLs
+  # 2. Uncomment the repos you want to test
+  # 3. Add expected scenarios if you know them (leave empty for first spike)
+  # 4. Add tags to categorize repos for later analysis
+
+  # - name: "managed-repo-1"
+  #   url: "git@YOUR-CORE-SERVER:org/repo1.git"
+  #   type: "managed"
+  #   notes: "TODO: Replace with actual repo"
+
+  # - name: "managed-repo-2"
+  #   url: "git@YOUR-CORE-SERVER:org/repo2.git"
+  #   type: "managed"
+  #   notes: "TODO: Replace with actual repo"
+
+  # Add more managed repos here (target: 30 total)...
+
+  # ==========================================================================
+  # PUBLIC OPEN SOURCE REPOSITORIES (50 repos)
+  # ==========================================================================
+  # These are included to provide baseline testing across diverse codebases
+
+  # Large, active projects
+  - name: "golang-go"
+    url: "https://github.com/golang/go.git"
+    type: "public"
+    notes: "Go programming language"
+    tags: ["large", "active", "monorepo"]
+
+  - name: "kubernetes-kubernetes"
+    url: "https://github.com/kubernetes/kubernetes.git"
+    type: "public"
+    notes: "Kubernetes container orchestration"
+    tags: ["large", "active", "many-branches"]
+
+  - name: "torvalds-linux"
+    url: "https://github.com/torvalds/linux.git"
+    type: "public"
+    notes: "Linux kernel"
+    tags: ["huge", "active", "many-contributors"]
+    skip: true  # Skip by default (very large, slow to clone)
+    skip_reason: "Too large for regular testing (>3GB)"
+
+  - name: "facebook-react"
+    url: "https://github.com/facebook/react.git"
+    type: "public"
+    notes: "React JavaScript library"
+    tags: ["large", "active", "frontend"]
+
+  - name: "microsoft-vscode"
+    url: "https://github.com/microsoft/vscode.git"
+    type: "public"
+    notes: "Visual Studio Code editor"
+    tags: ["large", "active", "typescript"]
+
+  - name: "nodejs-node"
+    url: "https://github.com/nodejs/node.git"
+    type: "public"
+    notes: "Node.js runtime"
+    tags: ["large", "active", "c++"]
+
+  - name: "rust-lang-rust"
+    url: "https://github.com/rust-lang/rust.git"
+    type: "public"
+    notes: "Rust programming language"
+    tags: ["large", "active", "compiler"]
+
+  - name: "tensorflow-tensorflow"
+    url: "https://github.com/tensorflow/tensorflow.git"
+    type: "public"
+    notes: "TensorFlow ML framework"
+    tags: ["huge", "active", "python"]
+
+  - name: "ansible-ansible"
+    url: "https://github.com/ansible/ansible.git"
+    type: "public"
+    notes: "Ansible automation"
+    tags: ["large", "active", "python"]
+
+  - name: "django-django"
+    url: "https://github.com/django/django.git"
+    type: "public"
+    notes: "Django web framework"
+    tags: ["medium", "active", "python"]
+
+  # Medium-sized active projects
+  - name: "prometheus-prometheus"
+    url: "https://github.com/prometheus/prometheus.git"
+    type: "public"
+    notes: "Prometheus monitoring"
+    tags: ["medium", "active", "go"]
+
+  - name: "grafana-grafana"
+    url: "https://github.com/grafana/grafana.git"
+    type: "public"
+    notes: "Grafana dashboards"
+    tags: ["medium", "active", "typescript"]
+
+  - name: "docker-compose"
+    url: "https://github.com/docker/compose.git"
+    type: "public"
+    notes: "Docker Compose"
+    tags: ["medium", "active", "go"]
+
+  - name: "hashicorp-terraform"
+    url: "https://github.com/hashicorp/terraform.git"
+    type: "public"
+    notes: "Terraform IaC"
+    tags: ["large", "active", "go"]
+
+  - name: "hashicorp-vault"
+    url: "https://github.com/hashicorp/vault.git"
+    type: "public"
+    notes: "HashiCorp Vault"
+    tags: ["medium", "active", "go"]
+
+  - name: "etcd-io-etcd"
+    url: "https://github.com/etcd-io/etcd.git"
+    type: "public"
+    notes: "etcd distributed key-value store"
+    tags: ["medium", "active", "go"]
+
+  - name: "git-lfs-git-lfs"
+    url: "https://github.com/git-lfs/git-lfs.git"
+    type: "public"
+    notes: "Git LFS (tests LFS detection)"
+    tags: ["medium", "lfs-enabled"]
+
+  - name: "jekyll-jekyll"
+    url: "https://github.com/jekyll/jekyll.git"
+    type: "public"
+    notes: "Jekyll static site generator"
+    tags: ["medium", "ruby"]
+
+  - name: "rails-rails"
+    url: "https://github.com/rails/rails.git"
+    type: "public"
+    notes: "Ruby on Rails framework"
+    tags: ["large", "active", "ruby"]
+
+  - name: "vuejs-core"
+    url: "https://github.com/vuejs/core.git"
+    type: "public"
+    notes: "Vue.js framework"
+    tags: ["medium", "active", "typescript"]
+
+  # Small to medium utility projects
+  - name: "junegunn-fzf"
+    url: "https://github.com/junegunn/fzf.git"
+    type: "public"
+    notes: "FZF fuzzy finder"
+    tags: ["small", "go", "utility"]
+
+  - name: "BurntSushi-ripgrep"
+    url: "https://github.com/BurntSushi/ripgrep.git"
+    type: "public"
+    notes: "ripgrep search tool"
+    tags: ["small", "rust", "utility"]
+
+  - name: "sharkdp-fd"
+    url: "https://github.com/sharkdp/fd.git"
+    type: "public"
+    notes: "fd file finder"
+    tags: ["small", "rust", "utility"]
+
+  - name: "sharkdp-bat"
+    url: "https://github.com/sharkdp/bat.git"
+    type: "public"
+    notes: "bat cat clone"
+    tags: ["small", "rust", "utility"]
+
+  - name: "jqlang-jq"
+    url: "https://github.com/jqlang/jq.git"
+    type: "public"
+    notes: "jq JSON processor"
+    tags: ["small", "c", "utility"]
+
+  - name: "tmux-tmux"
+    url: "https://github.com/tmux/tmux.git"
+    type: "public"
+    notes: "tmux terminal multiplexer"
+    tags: ["medium", "c", "utility"]
+
+  - name: "vim-vim"
+    url: "https://github.com/vim/vim.git"
+    type: "public"
+    notes: "Vim editor"
+    tags: ["large", "c", "editor"]
+
+  - name: "neovim-neovim"
+    url: "https://github.com/neovim/neovim.git"
+    type: "public"
+    notes: "Neovim editor"
+    tags: ["large", "c", "editor"]
+
+  - name: "zsh-users-zsh"
+    url: "https://github.com/zsh-users/zsh.git"
+    type: "public"
+    notes: "Zsh shell"
+    tags: ["large", "c", "shell"]
+
+  - name: "ohmyzsh-ohmyzsh"
+    url: "https://github.com/ohmyzsh/ohmyzsh.git"
+    type: "public"
+    notes: "Oh My Zsh framework"
+    tags: ["medium", "shell", "config"]
+
+  # Archived/inactive projects (test handling of stale repos)
+  - name: "bower-bower"
+    url: "https://github.com/bower/bower.git"
+    type: "public"
+    notes: "Bower package manager (archived)"
+    tags: ["archived", "inactive"]
+
+  - name: "atom-atom"
+    url: "https://github.com/atom/atom.git"
+    type: "public"
+    notes: "Atom editor (archived)"
+    tags: ["archived", "inactive", "large"]
+
+  # Documentation-only repos
+  - name: "github-docs"
+    url: "https://github.com/github/docs.git"
+    type: "public"
+    notes: "GitHub documentation"
+    tags: ["docs", "active"]
+
+  - name: "rust-lang-book"
+    url: "https://github.com/rust-lang/book.git"
+    type: "public"
+    notes: "Rust book"
+    tags: ["docs", "small"]
+
+  # Monorepos
+  - name: "vercel-turborepo"
+    url: "https://github.com/vercel/turborepo.git"
+    type: "public"
+    notes: "Turborepo monorepo tool"
+    tags: ["monorepo", "typescript"]
+
+  - name: "babel-babel"
+    url: "https://github.com/babel/babel.git"
+    type: "public"
+    notes: "Babel JavaScript compiler"
+    tags: ["monorepo", "javascript"]
+
+  # Projects with many branches
+  - name: "git-git"
+    url: "https://github.com/git/git.git"
+    type: "public"
+    notes: "Git itself"
+    tags: ["large", "many-branches", "c"]
+
+  - name: "opencv-opencv"
+    url: "https://github.com/opencv/opencv.git"
+    type: "public"
+    notes: "OpenCV computer vision"
+    tags: ["large", "c++", "many-branches"]
+
+  # Small projects (fast to test)
+  - name: "charmbracelet-glow"
+    url: "https://github.com/charmbracelet/glow.git"
+    type: "public"
+    notes: "Glow markdown renderer"
+    tags: ["small", "go"]
+
+  - name: "charmbracelet-bubbletea"
+    url: "https://github.com/charmbracelet/bubbletea.git"
+    type: "public"
+    notes: "Bubble Tea TUI framework"
+    tags: ["small", "go"]
+
+  - name: "cli-cli"
+    url: "https://github.com/cli/cli.git"
+    type: "public"
+    notes: "GitHub CLI"
+    tags: ["medium", "go"]
+
+  - name: "spf13-cobra"
+    url: "https://github.com/spf13/cobra.git"
+    type: "public"
+    notes: "Cobra CLI framework"
+    tags: ["small", "go"]
+
+  - name: "spf13-viper"
+    url: "https://github.com/spf13/viper.git"
+    type: "public"
+    notes: "Viper configuration"
+    tags: ["small", "go"]
+
+  - name: "urfave-cli"
+    url: "https://github.com/urfave/cli.git"
+    type: "public"
+    notes: "CLI framework"
+    tags: ["small", "go"]
+
+  - name: "gorilla-mux"
+    url: "https://github.com/gorilla/mux.git"
+    type: "public"
+    notes: "Gorilla Mux router"
+    tags: ["small", "go"]
+
+  - name: "gin-gonic-gin"
+    url: "https://github.com/gin-gonic/gin.git"
+    type: "public"
+    notes: "Gin web framework"
+    tags: ["medium", "go"]
+
+  - name: "sirupsen-logrus"
+    url: "https://github.com/sirupsen/logrus.git"
+    type: "public"
+    notes: "Logrus logging"
+    tags: ["small", "go"]
+
+  - name: "uber-go-zap"
+    url: "https://github.com/uber-go/zap.git"
+    type: "public"
+    notes: "Zap logging"
+    tags: ["small", "go"]
+
+  - name: "stretchr-testify"
+    url: "https://github.com/stretchr/testify.git"
+    type: "public"
+    notes: "Testify testing toolkit"
+    tags: ["small", "go"]
+
+  # ==========================================================================
+  # SYNTHETIC TEST REPOSITORIES (Add after Phase 1 implementation)
+  # ==========================================================================
+  #
+  # These will be programmatically generated to test specific edge cases:
+  # - Orphan branches
+  # - Divergent histories (50+ commits behind AND ahead)
+  # - Large binary files (100MB+)
+  # - Git LFS repos
+  # - Shallow clones
+  # - 100+ branches
+  # - Detached HEAD states
+  # - Corrupted objects
+  #
+  # Instructions for creating synthetic repos will be in README.md
