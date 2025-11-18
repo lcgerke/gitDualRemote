@@ -116,27 +116,65 @@ func suggestSyncFixes(sync SyncState, coreRemote, githubRemote string) []Fix {
 	case "S1":
 		return nil // Perfect sync
 
-	case "S2": // Local ahead of both remotes
+	case "S2": // Local ahead (full or partial)
+		var remoteName string
+		var aheadCount int
+		var description string
+
+		// Determine which remote to suggest pushing to
+		if sync.PartialSync {
+			remoteName = sync.AvailableRemote
+			if sync.LocalAheadOfCore > 0 {
+				aheadCount = sync.LocalAheadOfCore
+			} else {
+				aheadCount = sync.LocalAheadOfGitHub
+			}
+			description = fmt.Sprintf("Local has %d unpushed commits to %s", aheadCount, remoteName)
+		} else {
+			// Full sync - push to both remotes
+			remoteName = coreRemote
+			aheadCount = sync.LocalAheadOfCore
+			description = "Local has unpushed commits"
+		}
+
 		return []Fix{{
 			ScenarioID:  "S2",
-			Description: "Local has unpushed commits",
-			Command:     "git push",
+			Description: description,
+			Command:     fmt.Sprintf("git push %s %s", remoteName, sync.Branch),
 			Operation: &PushOperation{
-				Remote:  coreRemote,
+				Remote:  remoteName,
 				Refspec: sync.Branch,
 			},
 			AutoFixable: true,
 			Priority:    4,
-			Reason:      "Push local commits to both remotes",
+			Reason:      "Push local commits to remote",
 		}}
 
-	case "S3": // Local behind both remotes
+	case "S3": // Local behind (full or partial)
+		var remoteName string
+		var behindCount int
+		var description string
+
+		if sync.PartialSync {
+			remoteName = sync.AvailableRemote
+			if sync.LocalBehindCore > 0 {
+				behindCount = sync.LocalBehindCore
+			} else {
+				behindCount = sync.LocalBehindGitHub
+			}
+			description = fmt.Sprintf("Remote %s has %d commits not in local", remoteName, behindCount)
+		} else {
+			remoteName = coreRemote
+			behindCount = sync.LocalBehindCore
+			description = "Remotes have commits local doesn't have"
+		}
+
 		return []Fix{{
 			ScenarioID:  "S3",
-			Description: "Remotes have commits local doesn't have",
-			Command:     fmt.Sprintf("git pull %s %s", coreRemote, sync.Branch),
+			Description: description,
+			Command:     fmt.Sprintf("git pull %s %s", remoteName, sync.Branch),
 			Operation: &PullOperation{
-				Remote: coreRemote,
+				Remote: remoteName,
 				Branch: sync.Branch,
 			},
 			AutoFixable: true,
@@ -144,7 +182,27 @@ func suggestSyncFixes(sync SyncState, coreRemote, githubRemote string) []Fix {
 			Reason:      "Pull updates from remote",
 		}}
 
-	case "S4": // Local ahead of GitHub only
+	case "S4": // Diverged or Local ahead of GitHub only
+		// Check if this is partial sync (two-way divergence)
+		if sync.PartialSync {
+			var remoteName string
+			if sync.AvailableRemote != "" {
+				remoteName = sync.AvailableRemote
+			} else {
+				remoteName = "remote"
+			}
+			return []Fix{{
+				ScenarioID:  "S4",
+				Description: fmt.Sprintf("Local diverged from %s - manual merge required", remoteName),
+				Command:     fmt.Sprintf("git pull %s %s --rebase", remoteName, sync.Branch),
+				Operation:   nil,
+				AutoFixable: false,
+				Priority:    2,
+				Reason:      "Branch has diverged - manual intervention needed",
+			}}
+		}
+
+		// Full sync: Local ahead of GitHub only
 		return []Fix{{
 			ScenarioID:  "S4",
 			Description: "GitHub is behind (partial push failure)",
@@ -243,6 +301,28 @@ func suggestSyncFixes(sync SyncState, coreRemote, githubRemote string) []Fix {
 			AutoFixable: false,
 			Priority:    1,
 			Reason:      "Three-way merge required - cannot auto-fix divergence",
+		}}
+
+	case "S_UNAVAILABLE":
+		return []Fix{{
+			ScenarioID:  "S_UNAVAILABLE",
+			Description: "Remote unavailable - check network/credentials",
+			Command:     "Check remote configuration: git remote -v",
+			Operation:   nil,
+			AutoFixable: false,
+			Priority:    1,
+			Reason:      "Cannot determine sync status without remote access",
+		}}
+
+	case "S_NA_DETACHED":
+		return []Fix{{
+			ScenarioID:  "S_NA_DETACHED",
+			Description: "Detached HEAD - checkout a branch",
+			Command:     "git checkout main",
+			Operation:   nil,
+			AutoFixable: false,
+			Priority:    3,
+			Reason:      "Sync detection requires being on a branch",
 		}}
 
 	default:
