@@ -10,37 +10,41 @@ const (
 	backupSuffix = ".githelper-backup"
 )
 
-// PrePushHook is the pre-push hook content
-const PrePushHook = `#!/bin/bash
+// prePushHookTemplate is the pre-push hook template
+const prePushHookTemplate = `#!/bin/bash
 # GitHelper pre-push hook
 # Verifies both remotes are reachable before push
 
-githelper github check --quiet || {
+githelper github test --quiet %s || {
     echo "⚠️  Remote connectivity issue detected"
-    echo "Run 'githelper github check' for details"
+    echo "Run 'githelper github test %s' for details"
     exit 1
 }
 `
 
-// PostPushHook is the post-push hook content
-const PostPushHook = `#!/bin/bash
+// postPushHookTemplate is the post-push hook template
+const postPushHookTemplate = `#!/bin/bash
 # GitHelper post-push hook
 # Updates sync status in state file
 
-githelper github status --update-state
+githelper github status --quiet %s > /dev/null 2>&1 || true
 `
 
 // Manager handles git hook installation
 type Manager struct {
 	repoPath string
+	repoName string
 	hooksDir string
 }
 
 // NewManager creates a new hooks manager
 func NewManager(repoPath string) *Manager {
 	hooksDir := filepath.Join(repoPath, ".git", "hooks")
+	// Extract repo name from path
+	repoName := filepath.Base(repoPath)
 	return &Manager{
 		repoPath: repoPath,
+		repoName: repoName,
 		hooksDir: hooksDir,
 	}
 }
@@ -52,13 +56,17 @@ func (m *Manager) Install() error {
 		return fmt.Errorf("failed to create hooks directory: %w", err)
 	}
 
+	// Generate hooks with repo name
+	prePushHook := fmt.Sprintf(prePushHookTemplate, m.repoName, m.repoName)
+	postPushHook := fmt.Sprintf(postPushHookTemplate, m.repoName)
+
 	// Install pre-push hook
-	if err := m.installHook("pre-push", PrePushHook); err != nil {
+	if err := m.installHook("pre-push", prePushHook); err != nil {
 		return fmt.Errorf("failed to install pre-push hook: %w", err)
 	}
 
 	// Install post-push hook
-	if err := m.installHook("post-push", PostPushHook); err != nil {
+	if err := m.installHook("post-push", postPushHook); err != nil {
 		return fmt.Errorf("failed to install post-push hook: %w", err)
 	}
 
