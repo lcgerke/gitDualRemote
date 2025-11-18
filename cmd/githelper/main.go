@@ -44,6 +44,7 @@ func init() {
 	rootCmd.AddCommand(repoCmd)
 	rootCmd.AddCommand(githubCmd)
 	rootCmd.AddCommand(doctorCmd)
+	rootCmd.AddCommand(statusCmd)
 }
 
 func main() {
