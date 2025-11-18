@@ -1,0 +1,746 @@
+{
+  "version": "1.0",
+  "generated_at": "2025-11-18T08:42:39.20023371-05:00",
+  "git_version": "git version 2.51.0\n",
+  "summary": {
+    "total_repos": 30,
+    "success_count": 30,
+    "failure_count": 0,
+    "skipped_count": 0,
+    "match_count": 30,
+    "mismatch_count": 0,
+    "false_positive_count": 0,
+    "false_positive_rate": 0,
+    "avg_detection_time_ms": 0,
+    "max_detection_time_ms": 0,
+    "total_duration": "",
+    "scenario_counts": {
+      "C1": 30,
+      "E1": 30,
+      "S1": 30,
+      "W1": 30
+    }
+  },
+  "results": [
+    {
+      "repo_name": "lcgerke/recipePipeline",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/recipePipeline.git",
+      "start_time": "2025-11-18T08:40:46.922149327-05:00",
+      "end_time": "2025-11-18T08:40:48.169558496-05:00",
+      "duration": "1.247409169s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 1247,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/9ce36c5eb5be5288fa10d87b5ebf2734",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/MovieManage",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/MovieManage.git",
+      "start_time": "2025-11-18T08:40:46.92204948-05:00",
+      "end_time": "2025-11-18T08:40:48.590545334-05:00",
+      "duration": "1.668495824s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 1668,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/775e0aeaaeaa29037989496cb3a8d2af",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/todoist-ai",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/todoist-ai.git",
+      "start_time": "2025-11-18T08:40:46.921879722-05:00",
+      "end_time": "2025-11-18T08:40:48.630402159-05:00",
+      "duration": "1.708522467s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 1708,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/77e02f968b1575e76a1226a1e5e33c87",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/redmineCompose",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/redmineCompose.git",
+      "start_time": "2025-11-18T08:40:48.590555843-05:00",
+      "end_time": "2025-11-18T08:40:49.455778711-05:00",
+      "duration": "865.222898ms",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 865,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/ecbd039a9b9f398647b5f14a815a8a49",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/haConfig",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/haConfig.git",
+      "start_time": "2025-11-18T08:40:46.921978206-05:00",
+      "end_time": "2025-11-18T08:40:50.100406793-05:00",
+      "duration": "3.178428586s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 3178,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/0d083ac0ae8ccdc8e4e11f92841fcb00",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/git-tidy",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/git-tidy.git",
+      "start_time": "2025-11-18T08:40:49.455790523-05:00",
+      "end_time": "2025-11-18T08:40:50.348526837-05:00",
+      "duration": "892.736314ms",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 892,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/0d01afca0d4a93cce6974ac121f04a33",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/repoSync",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/repoSync.git",
+      "start_time": "2025-11-18T08:40:48.169574065-05:00",
+      "end_time": "2025-11-18T08:40:50.963592434-05:00",
+      "duration": "2.794018359s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 2793,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/a32b22678ce92bfcaba29eac8e2e83f0",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/mcp-lcg-gcal",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/mcp-lcg-gcal.git",
+      "start_time": "2025-11-18T08:40:50.100416612-05:00",
+      "end_time": "2025-11-18T08:40:51.015482953-05:00",
+      "duration": "915.066341ms",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 915,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/8215c5893414ac825c863d75519b7648",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/myrepo",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/myrepo.git",
+      "start_time": "2025-11-18T08:40:51.015491599-05:00",
+      "end_time": "2025-11-18T08:40:51.771819634-05:00",
+      "duration": "756.328004ms",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 756,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/f783a57a445d8695bc307aa093e07258",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/tax24",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/tax24.git",
+      "start_time": "2025-11-18T08:40:50.963605298-05:00",
+      "end_time": "2025-11-18T08:41:08.699744345-05:00",
+      "duration": "17.736139017s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 17736,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/adcd7d975d31d143f222be797d033c98",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/ansible-shared-roles",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/ansible-shared-roles.git",
+      "start_time": "2025-11-18T08:40:46.921922402-05:00",
+      "end_time": "2025-11-18T08:41:08.853083091-05:00",
+      "duration": "21.931160659s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 21931,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/2cf9c1295226e7e577e88e2bc63a26a8",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/NestCommandline",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/NestCommandline.git",
+      "start_time": "2025-11-18T08:41:08.853093952-05:00",
+      "end_time": "2025-11-18T08:41:09.746893975-05:00",
+      "duration": "893.800063ms",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 893,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/cac0c3725e8ad5a5ace79ff7c1fec71b",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/StarterGradle",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/StarterGradle.git",
+      "start_time": "2025-11-18T08:41:08.699757851-05:00",
+      "end_time": "2025-11-18T08:41:09.849181835-05:00",
+      "duration": "1.149423984s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 1149,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/3554ad4353d5b31355436b31bdd33a9c",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/SeleniumShoeScraper",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/SeleniumShoeScraper.git",
+      "start_time": "2025-11-18T08:41:09.849191043-05:00",
+      "end_time": "2025-11-18T08:41:10.646995743-05:00",
+      "duration": "797.80473ms",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 797,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/c2fffaa20ccb6c1bbd294e2469965e63",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/mcp-lcg-actualbudget",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/mcp-lcg-actualbudget.git",
+      "start_time": "2025-11-18T08:40:50.34853908-05:00",
+      "end_time": "2025-11-18T08:41:10.675067907-05:00",
+      "duration": "20.326528827s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 20326,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/2d5ff8a2a8f16a038e3793d235cc4652",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/TwitterStreamConsumer",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/TwitterStreamConsumer.git",
+      "start_time": "2025-11-18T08:41:10.647009679-05:00",
+      "end_time": "2025-11-18T08:41:11.592275969-05:00",
+      "duration": "945.26629ms",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 945,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/422f1313d3ef9bba12944efb8f853db3",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/TestProtobuf",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/TestProtobuf.git",
+      "start_time": "2025-11-18T08:41:10.675098915-05:00",
+      "end_time": "2025-11-18T08:41:11.619253244-05:00",
+      "duration": "944.154299ms",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 944,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/ad12bc809c820eab020d8e909d6ccf92",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/RPiReadTemp",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/RPiReadTemp.git",
+      "start_time": "2025-11-18T08:41:09.746908813-05:00",
+      "end_time": "2025-11-18T08:41:11.990145437-05:00",
+      "duration": "2.243236624s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 2243,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/8c64150871d940b63eaf8b7a2ce3cd19",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/CheckTreeSHASums",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/CheckTreeSHASums.git",
+      "start_time": "2025-11-18T08:41:11.990156758-05:00",
+      "end_time": "2025-11-18T08:41:13.075596494-05:00",
+      "duration": "1.085439706s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 1085,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/019dabfee33f0f4859259c4a39b7f95d",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/AnkiBuild",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/AnkiBuild.git",
+      "start_time": "2025-11-18T08:41:13.075924919-05:00",
+      "end_time": "2025-11-18T08:41:14.373621461-05:00",
+      "duration": "1.297696572s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 1297,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/bc20e0c75410f2e3b74e491d8635c10c",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/CaliperMod",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/CaliperMod.git",
+      "start_time": "2025-11-18T08:41:14.373630998-05:00",
+      "end_time": "2025-11-18T08:41:15.781150574-05:00",
+      "duration": "1.407519575s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 1407,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/a50007b1b8090b0ab08b16dbdfa97520",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/finances",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/finances.git",
+      "start_time": "2025-11-18T08:41:15.781162957-05:00",
+      "end_time": "2025-11-18T08:41:16.670309318-05:00",
+      "duration": "889.146361ms",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 889,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/744ad9e342d77477307dc86759510efc",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/dotfiles",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/dotfiles.git",
+      "start_time": "2025-11-18T08:41:16.67032103-05:00",
+      "end_time": "2025-11-18T08:41:23.969590359-05:00",
+      "duration": "7.299269329s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 7299,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/f5b8939ef5a84452d0666b45915a4e90",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/HomeAutomation",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/HomeAutomation.git",
+      "start_time": "2025-11-18T08:41:23.969600679-05:00",
+      "end_time": "2025-11-18T08:41:25.403339332-05:00",
+      "duration": "1.433738653s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 1433,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/c3711c8474f87dc042fd5fd092ca1fe5",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/MattVotingProject",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/MattVotingProject.git",
+      "start_time": "2025-11-18T08:41:25.403355823-05:00",
+      "end_time": "2025-11-18T08:41:26.088149269-05:00",
+      "duration": "684.793446ms",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 684,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/1ec0d35ae4742851d3ac0da448f47fce",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/CitibikeConsume",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/CitibikeConsume.git",
+      "start_time": "2025-11-18T08:41:26.088159799-05:00",
+      "end_time": "2025-11-18T08:41:38.01937555-05:00",
+      "duration": "11.931215751s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 11931,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/4359b25d42e0887597ee3f60a523816c",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/actualBudget",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/actualBudget.git",
+      "start_time": "2025-11-18T08:41:11.619297086-05:00",
+      "end_time": "2025-11-18T08:41:43.486665501-05:00",
+      "duration": "31.867368455s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 31867,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/6332b155a81a637fd8878ec326e0995d",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/go-mcpmon",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/go-mcpmon.git",
+      "start_time": "2025-11-18T08:40:51.77182824-05:00",
+      "end_time": "2025-11-18T08:41:48.182850378-05:00",
+      "duration": "56.411022178s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 56410,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/aabdd4da27b1ed64a101ce75685476c6",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/claude-config",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/claude-config.git",
+      "start_time": "2025-11-18T08:41:11.592294624-05:00",
+      "end_time": "2025-11-18T08:42:37.69312225-05:00",
+      "duration": "1m26.100827627s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 86100,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/a554156cab9d79f5494048656d107455",
+      "tags": [
+        "production"
+      ]
+    },
+    {
+      "repo_name": "lcgerke/githubSync",
+      "repo_type": "managed",
+      "repo_url": "lcgasgit:/srv/git/githubSync.git",
+      "start_time": "2025-11-18T08:40:48.630415895-05:00",
+      "end_time": "2025-11-18T08:42:39.199987819-05:00",
+      "duration": "1m50.569571924s",
+      "success": true,
+      "detected": {
+        "existence": "E1",
+        "sync": "S1",
+        "working_tree": "W1",
+        "corruption": "C1",
+        "lfs_enabled": false
+      },
+      "match": true,
+      "false_positive": false,
+      "detection_time_ms": 0,
+      "clone_time_ms": 110569,
+      "local_path": "/home/lcgerke/.cache/githelper-corpus/2cbc3bd1fbd17557d461af4f2ca10f3d",
+      "tags": [
+        "production"
+      ]
+    }
+  ]
+}
