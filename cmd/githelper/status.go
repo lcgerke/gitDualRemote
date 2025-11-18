@@ -133,27 +133,73 @@ func printStatusReport(out *ui.Output, state *scenarios.RepositoryState, showFix
 	}
 	fmt.Println()
 
-	// Sync
-	if state.Existence.LocalExists && state.Existence.CoreExists && state.Existence.GitHubExists {
-		fmt.Println("🔄 Sync Status:")
-		fmt.Printf("  %s - %s\n", state.Sync.ID, state.Sync.Description)
-		if state.Sync.Branch != "" {
-			fmt.Printf("  Branch: %s\n", state.Sync.Branch)
-		}
-		if state.Sync.LocalAheadOfCore > 0 {
-			fmt.Printf("  Local ahead of Core: %d commits\n", state.Sync.LocalAheadOfCore)
-		}
-		if state.Sync.LocalBehindCore > 0 {
-			fmt.Printf("  Local behind Core: %d commits\n", state.Sync.LocalBehindCore)
-		}
-		if state.Sync.LocalAheadOfGitHub > 0 {
-			fmt.Printf("  Local ahead of GitHub: %d commits\n", state.Sync.LocalAheadOfGitHub)
-		}
-		if state.Sync.LocalBehindGitHub > 0 {
-			fmt.Printf("  Local behind GitHub: %d commits\n", state.Sync.LocalBehindGitHub)
-		}
-		if state.Sync.Diverged {
-			out.Warning("  ⚠️  DIVERGED - manual merge required")
+	// Sync - now supports partial sync (E2/E3) and full sync (E1)
+	if state.Existence.LocalExists && (state.Existence.CoreExists || state.Existence.GitHubExists) {
+		// Display sync status
+		if state.Sync.Error != "" {
+			fmt.Println("🔄 Sync Status:")
+			fmt.Printf("  %s - %s\n", state.Sync.ID, state.Sync.Description)
+			out.Warning(fmt.Sprintf("  ⚠️  Error: %s", state.Sync.Error))
+		} else if state.Sync.PartialSync {
+			fmt.Println("🔄 Sync Status (partial):")
+			fmt.Printf("  %s - %s\n", state.Sync.ID, state.Sync.Description)
+			if state.Sync.Branch != "" {
+				fmt.Printf("  Branch: %s\n", state.Sync.Branch)
+			}
+
+			// Show available remote stats
+			if state.Sync.AvailableRemote != "" {
+				if state.Sync.LocalAheadOfCore > 0 || state.Sync.LocalBehindCore > 0 {
+					fmt.Printf("  Local vs %s: ", state.Sync.AvailableRemote)
+					if state.Sync.LocalAheadOfCore > 0 {
+						fmt.Printf("%d ahead", state.Sync.LocalAheadOfCore)
+					}
+					if state.Sync.LocalBehindCore > 0 {
+						if state.Sync.LocalAheadOfCore > 0 {
+							fmt.Printf(", ")
+						}
+						fmt.Printf("%d behind", state.Sync.LocalBehindCore)
+					}
+					fmt.Printf("\n")
+				} else if state.Sync.LocalAheadOfGitHub > 0 || state.Sync.LocalBehindGitHub > 0 {
+					fmt.Printf("  Local vs %s: ", state.Sync.AvailableRemote)
+					if state.Sync.LocalAheadOfGitHub > 0 {
+						fmt.Printf("%d ahead", state.Sync.LocalAheadOfGitHub)
+					}
+					if state.Sync.LocalBehindGitHub > 0 {
+						if state.Sync.LocalAheadOfGitHub > 0 {
+							fmt.Printf(", ")
+						}
+						fmt.Printf("%d behind", state.Sync.LocalBehindGitHub)
+					}
+					fmt.Printf("\n")
+				}
+			}
+			if state.Sync.Diverged {
+				out.Warning("  ⚠️  DIVERGED - manual merge required")
+			}
+		} else if state.Existence.CoreExists && state.Existence.GitHubExists {
+			// Full three-way sync
+			fmt.Println("🔄 Sync Status:")
+			fmt.Printf("  %s - %s\n", state.Sync.ID, state.Sync.Description)
+			if state.Sync.Branch != "" {
+				fmt.Printf("  Branch: %s\n", state.Sync.Branch)
+			}
+			if state.Sync.LocalAheadOfCore > 0 {
+				fmt.Printf("  Local ahead of Core: %d commits\n", state.Sync.LocalAheadOfCore)
+			}
+			if state.Sync.LocalBehindCore > 0 {
+				fmt.Printf("  Local behind Core: %d commits\n", state.Sync.LocalBehindCore)
+			}
+			if state.Sync.LocalAheadOfGitHub > 0 {
+				fmt.Printf("  Local ahead of GitHub: %d commits\n", state.Sync.LocalAheadOfGitHub)
+			}
+			if state.Sync.LocalBehindGitHub > 0 {
+				fmt.Printf("  Local behind GitHub: %d commits\n", state.Sync.LocalBehindGitHub)
+			}
+			if state.Sync.Diverged {
+				out.Warning("  ⚠️  DIVERGED - manual merge required")
+			}
 		}
 		fmt.Println()
 	}

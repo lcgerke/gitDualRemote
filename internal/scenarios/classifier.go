@@ -113,31 +113,54 @@ func (c *Classifier) Detect() (*RepositoryState, error) {
 		}
 	}
 
-	// Detect sync state (S1-S13) - only if all three locations exist
-	if existence.LocalExists && existence.CoreExists && existence.GitHubExists {
-		// Get default branch
-		defaultBranch, err := gc.GetDefaultBranch(c.coreRemote)
-		if err != nil {
+	// Detect sync state - expanded to handle E1, E2, E3 scenarios
+	if existence.LocalExists {
+		// Get default branch (try from available remote, fallback to "main")
+		var defaultBranch string
+		if existence.CoreExists {
+			defaultBranch, _ = gc.GetDefaultBranch(c.coreRemote)
+		} else if existence.GitHubExists {
+			defaultBranch, _ = gc.GetDefaultBranch(c.githubRemote)
+		}
+		if defaultBranch == "" {
 			defaultBranch = "main" // fallback
 		}
 		state.DefaultBranch = defaultBranch
 
-		sync, err := c.detectDefaultBranchSync(gc, defaultBranch)
-		if err != nil {
-			return nil, fmt.Errorf("sync detection failed: %w", err)
-		}
-		state.Sync = sync
-
-		// Detect per-branch topology (B1-B7) - unless skipped
-		if !c.options.SkipBranches {
-			branches, err := c.detectBranchTopology(gc)
+		// Detect sync based on which remotes exist
+		switch state.Existence.ID {
+		case "E1":
+			// Full three-way sync detection
+			sync, err := c.detectDefaultBranchSync(gc, defaultBranch)
 			if err != nil {
-				return nil, fmt.Errorf("branch topology detection failed: %w", err)
+				return nil, fmt.Errorf("sync detection failed: %w", err)
 			}
-			state.Branches = branches
+			state.Sync = sync
+
+			// Detect per-branch topology (B1-B7) - unless skipped
+			if !c.options.SkipBranches {
+				branches, err := c.detectBranchTopology(gc)
+				if err != nil {
+					return nil, fmt.Errorf("branch topology detection failed: %w", err)
+				}
+				state.Branches = branches
+			}
+
+		case "E2": // Local + Core exist, GitHub missing
+			state.Sync = c.detectTwoWaySync(gc, defaultBranch, c.coreRemote, "", "GitHub")
+
+		case "E3": // Local + GitHub exist, Core missing
+			state.Sync = c.detectTwoWaySync(gc, defaultBranch, "", c.githubRemote, "Core")
+
+		default:
+			// E4-E8: Not enough locations for sync detection
+			state.Sync = SyncState{
+				ID:          "S1",
+				Description: "N/A (not all locations exist)",
+			}
 		}
 	} else {
-		// Can't detect sync without all three locations
+		// No local repository - can't detect sync
 		state.Sync = SyncState{
 			ID:          "S1",
 			Description: "N/A (not all locations exist)",
@@ -434,6 +457,113 @@ func (c *Classifier) detectDefaultBranchSync(gc *git.Client, branch string) (Syn
 	}
 
 	return sync, nil
+}
+
+// gitClient defines the interface for git operations needed by detectTwoWaySync
+type gitClient interface {
+	FetchRemote(remote string) error
+	GetBranchHash(branch string) (string, error)
+	GetRemoteBranchHash(remote, branch string) (string, error)
+	CountCommitsBetween(ref1, ref2 string) (int, error)
+}
+
+// detectTwoWaySync performs two-way sync detection for E2/E3 scenarios
+// where only one remote is available (either core or github, but not both)
+func (c *Classifier) detectTwoWaySync(
+	gc gitClient,
+	branch string,
+	coreRemote string,
+	githubRemote string,
+	missingRemoteName string,
+) SyncState {
+	// Determine which remote is available
+	remoteName := coreRemote
+	if remoteName == "" {
+		remoteName = githubRemote
+	}
+
+	// 1. FETCH from available remote (ensures fresh data)
+	err := gc.FetchRemote(remoteName)
+	if err != nil {
+		// Remote unreachable - return error state
+		return SyncState{
+			ID:          "S_UNAVAILABLE",
+			Description: fmt.Sprintf("Cannot connect to %s", remoteName),
+			Branch:      branch,
+			PartialSync: true,
+			Error:       err.Error(),
+		}
+	}
+
+	// 2. Get commit hashes
+	localHash, err := gc.GetBranchHash(branch)
+	if err != nil {
+		return SyncState{
+			ID:          "S_NA_DETACHED",
+			Description: "Sync N/A (detached HEAD or missing branch)",
+			PartialSync: true,
+			Error:       err.Error(),
+		}
+	}
+
+	remoteHash, err := gc.GetRemoteBranchHash(remoteName, branch)
+	if err != nil {
+		return SyncState{
+			ID:          "S_UNAVAILABLE",
+			Description: fmt.Sprintf("Remote branch %s/%s not found", remoteName, branch),
+			Branch:      branch,
+			PartialSync: true,
+			Error:       err.Error(),
+		}
+	}
+
+	// 3. Calculate ahead/behind counts (reuse existing helper)
+	ahead, _ := gc.CountCommitsBetween(localHash, remoteHash)
+	behind, _ := gc.CountCommitsBetween(remoteHash, localHash)
+
+	// 4. Determine sync scenario and build description
+	var scenarioID string
+	var description string
+	diverged := ahead > 0 && behind > 0
+
+	if ahead == 0 && behind == 0 {
+		scenarioID = "S1"
+		description = fmt.Sprintf("In sync with %s (%s N/A)", remoteName, missingRemoteName)
+	} else if ahead > 0 && behind == 0 {
+		scenarioID = "S2"
+		description = fmt.Sprintf("Local ahead of %s (%s N/A)", remoteName, missingRemoteName)
+	} else if ahead == 0 && behind > 0 {
+		scenarioID = "S3"
+		description = fmt.Sprintf("Local behind %s (%s N/A)", remoteName, missingRemoteName)
+	} else {
+		scenarioID = "S4"
+		description = fmt.Sprintf("Diverged from %s (%s N/A)", remoteName, missingRemoteName)
+	}
+
+	// 5. Build SyncState with appropriate fields populated
+	state := SyncState{
+		ID:          scenarioID,
+		Description: description,
+		Branch:      branch,
+		PartialSync: true,
+		LocalHash:   localHash,
+		Diverged:    diverged,
+	}
+
+	// Populate remote-specific fields
+	if coreRemote != "" {
+		state.CoreHash = remoteHash
+		state.LocalAheadOfCore = ahead
+		state.LocalBehindCore = behind
+		state.AvailableRemote = coreRemote
+	} else {
+		state.GitHubHash = remoteHash
+		state.LocalAheadOfGitHub = ahead
+		state.LocalBehindGitHub = behind
+		state.AvailableRemote = githubRemote
+	}
+
+	return state
 }
 
 // detectBranchTopology analyzes per-branch sync state (B1-B7 for each branch)

@@ -341,6 +341,42 @@ func GetScenarioTable() ScenarioTable {
 			},
 			RelatedIDs: []string{"S10", "S11", "S12"},
 		},
+		"S_UNAVAILABLE": {
+			ID:          "S_UNAVAILABLE",
+			Name:        "Remote Unavailable",
+			Description: "Cannot connect to remote or determine sync status",
+			Category:    CategorySync,
+			Severity:    SeverityError,
+			AutoFixable: false,
+			TypicalCauses: []string{
+				"Network connectivity issues",
+				"Remote server unreachable",
+				"Invalid credentials",
+			},
+			ManualSteps: []string{
+				"Check network connection",
+				"Verify remote configuration: git remote -v",
+				"Test remote access: git ls-remote <remote>",
+			},
+			RelatedIDs: []string{},
+		},
+		"S_NA_DETACHED": {
+			ID:          "S_NA_DETACHED",
+			Name:        "Sync N/A (Detached HEAD)",
+			Description: "Repository in detached HEAD state - sync comparison not applicable",
+			Category:    CategorySync,
+			Severity:    SeverityWarning,
+			AutoFixable: false,
+			TypicalCauses: []string{
+				"Checked out specific commit",
+				"In middle of rebase or cherry-pick",
+			},
+			ManualSteps: []string{
+				"Create branch: git checkout -b <branch-name>",
+				"Or return to branch: git checkout <branch-name>",
+			},
+			RelatedIDs: []string{"C7"},
+		},
 
 		// ========== WORKING TREE SCENARIOS (W1-W5) ==========
 		"W1": {

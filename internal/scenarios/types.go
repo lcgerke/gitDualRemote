@@ -64,6 +64,10 @@ type SyncState struct {
 
 	Branch string `json:"branch"` // Default branch name
 
+	PartialSync     bool   `json:"partial_sync,omitempty"`      // True for E2/E3 scenarios (two-way sync)
+	AvailableRemote string `json:"available_remote,omitempty"`  // Name of available remote in partial sync
+	Error           string `json:"error,omitempty"`             // Error message if sync detection failed
+
 	LocalHash  string `json:"local_hash,omitempty"`
 	CoreHash   string `json:"core_hash,omitempty"`
 	GitHubHash string `json:"github_hash,omitempty"`
