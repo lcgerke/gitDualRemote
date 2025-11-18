@@ -1,0 +1,25 @@
+# Local configuration (copy from template)
+repos.yaml
+
+# Generated reports (HTML)
+*.html
+
+# Cache and temp files
+.cache/
+tmp/
+
+# Test repositories (cloned locally for testing)
+repos/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# BUT: DO commit baseline results
+!spike1.json
+!spike2.json
+!*_results.json
