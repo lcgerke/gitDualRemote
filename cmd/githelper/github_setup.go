@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 	"github.com/lcgerke/githelper/internal/errors"
 	"github.com/lcgerke/githelper/internal/git"
 	ghclient "github.com/lcgerke/githelper/internal/github"
+	remoteclient "github.com/lcgerke/githelper/internal/remote/github"
 	"github.com/lcgerke/githelper/internal/hooks"
 	"github.com/lcgerke/githelper/internal/state"
 	"github.com/lcgerke/githelper/internal/ui"
@@ -143,15 +145,23 @@ func runGitHubSetup(cmd *cobra.Command, args []string) error {
 	}
 	out.Success("Configured repository-local SSH")
 
-	// Get PAT from Vault
+	// Get PAT from Vault and set as environment variable for new client
 	out.Info("Retrieving GitHub PAT from Vault...")
 	pat, err := cfgMgr.GetPAT(repoName)
 	if err != nil {
 		return errors.Wrap(errors.ErrorTypeVault, "failed to retrieve GitHub PAT from Vault", err)
 	}
 
-	// Create GitHub client
-	ghClient := ghclient.NewClient(ctx, pat)
+	// Set token as environment variable for new remote client
+	os.Setenv("GITHUB_TOKEN", pat)
+	defer os.Unsetenv("GITHUB_TOKEN")
+
+	// Create new GitHub client using remote package
+	ghRepoURL := fmt.Sprintf("git@github.com:%s/%s.git", githubUser, githubRepo)
+	ghClient, err := remoteclient.NewClient(ghRepoURL)
+	if err != nil {
+		return fmt.Errorf("failed to create GitHub client: %w", err)
+	}
 
 	// Test GitHub connection
 	out.Info("Testing GitHub connection...")
@@ -161,8 +171,7 @@ func runGitHubSetup(cmd *cobra.Command, args []string) error {
 	out.Success("GitHub connection verified")
 
 	// Check if GitHub repository exists
-	ghRepoURL := fmt.Sprintf("git@github.com:%s/%s.git", githubUser, githubRepo)
-	exists, err := ghClient.RepositoryExists(githubUser, githubRepo)
+	exists, err := ghClient.RepositoryExists()
 	if err != nil {
 		return errors.NetworkError("checking GitHub repository existence", err)
 	}
@@ -174,12 +183,14 @@ func runGitHubSetup(cmd *cobra.Command, args []string) error {
 			// Prefer gh CLI if available (doesn't require PAT from Vault)
 			if ghclient.CheckGHCLIAvailable() && ghclient.CheckGHAuthenticated() {
 				out.Info("Using gh CLI for repository creation")
-				err := ghClient.CreateRepositoryViaGH(githubRepo, fmt.Sprintf("%s repository", repoName), privateRepo)
+				// Use old client for gh CLI support (backward compatibility)
+				oldClient := ghclient.NewClient(context.Background(), pat)
+				err := oldClient.CreateRepositoryViaGH(githubRepo, fmt.Sprintf("%s repository", repoName), privateRepo)
 				if err != nil {
 					return errors.Wrap(errors.ErrorTypeGitHub, "failed to create GitHub repository via gh CLI", err)
 				}
 			} else {
-				// Fall back to API method (requires PAT)
+				// Use new API method
 				out.Info("Using GitHub API for repository creation")
 				_, err := ghClient.CreateRepository(githubRepo, fmt.Sprintf("%s repository", repoName), privateRepo)
 				if err != nil {
