@@ -194,3 +194,66 @@ func (c *Client) CanAdmin() (bool, error) {
 	}
 	return perms.Admin, nil
 }
+
+// CreateRepository creates a new GitHub repository
+func (c *Client) CreateRepository(name, description string, private bool) (*github.Repository, error) {
+	repo := &github.Repository{
+		Name:        github.String(name),
+		Description: github.String(description),
+		Private:     github.Bool(private),
+		AutoInit:    github.Bool(false), // We'll push our own initial commit
+	}
+
+	createdRepo, _, err := c.client.Repositories.Create(c.ctx, "", repo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create repository: %w", err)
+	}
+
+	return createdRepo, nil
+}
+
+// GetRepository retrieves repository information
+func (c *Client) GetRepository() (*github.Repository, error) {
+	repository, _, err := c.client.Repositories.Get(c.ctx, c.owner, c.repo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get repository: %w", err)
+	}
+
+	return repository, nil
+}
+
+// RepositoryExists checks if a repository exists
+func (c *Client) RepositoryExists() (bool, error) {
+	_, resp, err := c.client.Repositories.Get(c.ctx, c.owner, c.repo)
+	if err != nil {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to check repository existence: %w", err)
+	}
+
+	return true, nil
+}
+
+// TestConnection tests the GitHub API connection
+func (c *Client) TestConnection() error {
+	_, _, err := c.client.Users.Get(c.ctx, "")
+	if err != nil {
+		return fmt.Errorf("GitHub API connection test failed: %w", err)
+	}
+	return nil
+}
+
+// GetSSHURL returns the SSH clone URL for the repository
+func (c *Client) GetSSHURL() (string, error) {
+	repository, err := c.GetRepository()
+	if err != nil {
+		return "", err
+	}
+
+	if repository.SSHURL == nil {
+		return "", fmt.Errorf("repository has no SSH URL")
+	}
+
+	return *repository.SSHURL, nil
+}
