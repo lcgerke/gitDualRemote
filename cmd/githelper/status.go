@@ -278,7 +278,7 @@ func printStatusReport(out *ui.Output, state *scenarios.RepositoryState, showFix
 		out.Success("✅ Repository is healthy and in sync")
 	} else {
 		if showFixes {
-			fmt.Println("Run 'githelper repair --auto' to apply auto-fixable changes")
+			fmt.Println("Run 'githelper doctor --auto-fix' to apply auto-fixable changes")
 		} else {
 			fmt.Println("Run 'githelper status --show-fixes' to see suggested fixes")
 		}
