@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/lcgerke/githelper/internal/constants"
 	"github.com/lcgerke/githelper/internal/git"
 	"github.com/lcgerke/githelper/internal/state"
 	"github.com/lcgerke/githelper/internal/ui"
@@ -33,7 +34,7 @@ Use --retry-github to force sync even after partial push failures.`,
 
 func init() {
 	githubSyncCmd.Flags().BoolVar(&retryGitHub, "retry-github", false, "Retry syncing to GitHub after partial failure")
-	githubSyncCmd.Flags().StringVar(&branch, "branch", "main", "Branch to sync (default: main)")
+	githubSyncCmd.Flags().StringVar(&branch, "branch", constants.DefaultBranch, fmt.Sprintf("Branch to sync (default: %s)", constants.DefaultBranch))
 }
 
 func runGitHubSync(cmd *cobra.Command, args []string) error {
@@ -74,8 +75,8 @@ func runGitHubSync(cmd *cobra.Command, args []string) error {
 	// Get remote names from git config
 	// For dual-push setup, we use "origin" as the remote with two push URLs
 	// We need to determine the actual remote names for bare and GitHub
-	bareRemote := "origin"      // This is the fetch URL (bare repo)
-	githubRemoteName := "github" // We'll check if this exists
+	bareRemote := constants.DefaultCoreRemote      // This is the fetch URL (bare repo)
+	githubRemoteName := constants.DefaultGitHubRemote // We'll check if this exists
 
 	// Check if we have a separate github remote or if it's configured as a push URL
 	remotes, err := gitClient.ListRemotes()
@@ -86,7 +87,7 @@ func runGitHubSync(cmd *cobra.Command, args []string) error {
 	// Find the GitHub remote
 	hasGitHubRemote := false
 	for _, remote := range remotes {
-		if remote == "github" {
+		if remote == constants.DefaultGitHubRemote {
 			hasGitHubRemote = true
 			break
 		}

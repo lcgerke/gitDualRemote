@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/lcgerke/githelper/internal/config"
+	"github.com/lcgerke/githelper/internal/constants"
+	"github.com/lcgerke/githelper/internal/errors"
 	"github.com/lcgerke/githelper/internal/git"
 	"github.com/lcgerke/githelper/internal/state"
 	"github.com/lcgerke/githelper/internal/ui"
@@ -57,13 +59,13 @@ func runRepoCreate(cmd *cobra.Command, args []string) error {
 	// Initialize config manager
 	cfgMgr, err := config.NewManager(ctx, "")
 	if err != nil {
-		return fmt.Errorf("failed to initialize config: %w", err)
+		return errors.Wrap(errors.ErrorTypeConfig, "failed to initialize config manager", err)
 	}
 
 	// Get configuration
 	cfg, fromCache, err := cfgMgr.GetConfig()
 	if err != nil {
-		return fmt.Errorf("failed to get config: %w", err)
+		return errors.Wrap(errors.ErrorTypeConfig, "failed to get configuration from Vault", err)
 	}
 
 	// Show config status
@@ -91,14 +93,17 @@ func runRepoCreate(cmd *cobra.Command, args []string) error {
 	if cloneDir == "" {
 		home, err := os.UserHomeDir()
 		if err != nil {
-			return fmt.Errorf("failed to get home directory: %w", err)
+			return errors.Wrap(errors.ErrorTypeFileSystem, "failed to get home directory", err)
 		}
 		cloneDir = filepath.Join(home, "repos", repoName)
 	}
 
 	// Check if clone directory already exists
 	if _, err := os.Stat(cloneDir); err == nil {
-		return fmt.Errorf("directory already exists: %s", cloneDir)
+		return errors.WithHint(
+			errors.New(errors.ErrorTypeFileSystem, fmt.Sprintf("directory already exists: %s", cloneDir)),
+			"Choose a different name or use --clone-dir to specify a different location",
+		)
 	}
 
 	// Parse bare repo URL to determine if it's local or remote
@@ -113,20 +118,23 @@ func runRepoCreate(cmd *cobra.Command, args []string) error {
 	} else {
 		// Remote SSH URL - for Phase 1, we'll error out
 		// In Phase 2+, we'd handle this via SSH
-		return fmt.Errorf("remote bare repo creation not yet implemented (Phase 2)")
+		return errors.WithHint(
+			errors.New(errors.ErrorTypeValidation, "remote bare repository creation not yet implemented"),
+			"Use a local file path or file:// URL for now. Remote SSH support coming in Phase 2",
+		)
 	}
 
 	// Create bare repository
 	out.Infof("Creating bare repository at %s...", bareRepoURL)
 	if err := git.InitBareRepo(bareRepoPath); err != nil {
-		return fmt.Errorf("failed to create bare repository: %w", err)
+		return errors.Wrap(errors.ErrorTypeGit, "failed to create bare repository", err)
 	}
 	out.Success(fmt.Sprintf("Created bare repository: %s", bareRepoURL))
 
 	// Clone the bare repository
 	out.Infof("Cloning to %s...", cloneDir)
 	if err := git.Clone(bareRepoPath, cloneDir); err != nil {
-		return fmt.Errorf("failed to clone repository: %w", err)
+		return errors.Wrap(errors.ErrorTypeGit, "failed to clone repository", err)
 	}
 	out.Success(fmt.Sprintf("Cloned to: %s", cloneDir))
 
@@ -135,7 +143,7 @@ func runRepoCreate(cmd *cobra.Command, args []string) error {
 		switch repoType {
 		case "go":
 			if err := initGoRepo(cloneDir, repoName, out); err != nil {
-				return fmt.Errorf("failed to initialize Go repository: %w", err)
+				return errors.Wrap(errors.ErrorTypeFileSystem, "failed to initialize Go repository", err)
 			}
 		default:
 			out.Warningf("Unknown repository type '%s', skipping initialization", repoType)
@@ -155,25 +163,25 @@ func runRepoCreate(cmd *cobra.Command, args []string) error {
 			content := fmt.Sprintf("# %s\n\nCreated by githelper on %s\n",
 				repoName, time.Now().Format("2006-01-02"))
 			if err := os.WriteFile(readmePath, []byte(content), 0644); err != nil {
-				return fmt.Errorf("failed to create README: %w", err)
+				return errors.Wrap(errors.ErrorTypeFileSystem, "failed to create README file", err)
 			}
 		}
 
 		if err := client.Add("."); err != nil {
-			return fmt.Errorf("failed to stage files: %w", err)
+			return errors.Wrap(errors.ErrorTypeGit, "failed to stage files", err)
 		}
 
 		if err := client.Commit("Initial commit"); err != nil {
-			return fmt.Errorf("failed to create initial commit: %w", err)
+			return errors.Wrap(errors.ErrorTypeGit, "failed to create initial commit", err)
 		}
 
 		out.Success("Created initial commit")
 
 		// Push to bare repo
-		if err := client.PushSetUpstream("origin", "master"); err != nil {
+		if err := client.PushSetUpstream(constants.DefaultCoreRemote, constants.MasterBranch); err != nil {
 			// Try main branch if master fails
-			if err := client.PushSetUpstream("origin", "main"); err != nil {
-				return fmt.Errorf("failed to push initial commit: %w", err)
+			if err := client.PushSetUpstream(constants.DefaultCoreRemote, constants.DefaultBranch); err != nil {
+				return errors.Wrap(errors.ErrorTypeGit, "failed to push initial commit", err)
 			}
 		}
 		out.Success("Pushed initial commit to bare repository")
@@ -182,7 +190,7 @@ func runRepoCreate(cmd *cobra.Command, args []string) error {
 	// Save to state file
 	stateMgr, err := state.NewManager("")
 	if err != nil {
-		return fmt.Errorf("failed to initialize state manager: %w", err)
+		return errors.Wrap(errors.ErrorTypeState, "failed to initialize state manager", err)
 	}
 
 	repo := &state.Repository{
@@ -193,7 +201,7 @@ func runRepoCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := stateMgr.AddRepository(repoName, repo); err != nil {
-		return fmt.Errorf("failed to save state: %w", err)
+		return errors.Wrap(errors.ErrorTypeState, "failed to save repository state", err)
 	}
 
 	if !out.IsJSON() {

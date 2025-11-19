@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/lcgerke/githelper/internal/constants"
+	"github.com/lcgerke/githelper/internal/errors"
 	"github.com/lcgerke/githelper/internal/git"
 	"github.com/lcgerke/githelper/internal/scenarios"
 	"github.com/lcgerke/githelper/internal/ui"
@@ -41,8 +43,8 @@ func init() {
 	statusCmd.Flags().BoolVar(&statusNoFetch, "no-fetch", false, "Skip fetching from remotes")
 	statusCmd.Flags().BoolVar(&statusQuick, "quick", false, "Skip corruption checks")
 	statusCmd.Flags().BoolVar(&statusShowFixes, "show-fixes", false, "Show suggested fixes")
-	statusCmd.Flags().StringVar(&statusCoreRemote, "core-remote", "origin", "Name of Core remote")
-	statusCmd.Flags().StringVar(&statusGitHubRemote, "github-remote", "github", "Name of GitHub remote")
+	statusCmd.Flags().StringVar(&statusCoreRemote, "core-remote", constants.DefaultCoreRemote, "Name of Core remote")
+	statusCmd.Flags().StringVar(&statusGitHubRemote, "github-remote", constants.DefaultGitHubRemote, "Name of GitHub remote")
 }
 
 func runStatus(cmd *cobra.Command, args []string) error {
@@ -65,12 +67,15 @@ func runStatus(cmd *cobra.Command, args []string) error {
 
 	// Validate git version
 	if err := gitClient.ValidateGitVersion(); err != nil {
-		return fmt.Errorf("git version check failed: %w", err)
+		return errors.Wrap(errors.ErrorTypeGit, "git version check failed", err)
 	}
 
 	// Check if it's a git repository
 	if !gitClient.IsRepository() {
-		return fmt.Errorf("not a git repository: %s", repoPath)
+		return errors.WithHint(
+			errors.New(errors.ErrorTypeGit, fmt.Sprintf("not a git repository: %s", repoPath)),
+			"Initialize a git repository with 'git init' or navigate to an existing repository",
+		)
 	}
 
 	// Configure detection options
@@ -89,7 +94,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 
 	state, err := classifier.Detect()
 	if err != nil {
-		return fmt.Errorf("state detection failed: %w", err)
+		return errors.Wrap(errors.ErrorTypeGit, "failed to detect repository state", err)
 	}
 
 	// Output results
@@ -97,7 +102,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		// JSON output
 		jsonBytes, err := json.MarshalIndent(state, "", "  ")
 		if err != nil {
-			return fmt.Errorf("failed to marshal state: %w", err)
+			return errors.Wrap(errors.ErrorTypeState, "failed to marshal state to JSON", err)
 		}
 		fmt.Println(string(jsonBytes))
 	} else {

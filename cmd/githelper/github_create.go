@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/lcgerke/githelper/internal/errors"
 	ghclient "github.com/lcgerke/githelper/internal/github"
 	"github.com/lcgerke/githelper/internal/ui"
 	"github.com/spf13/cobra"
@@ -56,11 +57,17 @@ func runGitHubCreate(cmd *cobra.Command, args []string) error {
 
 	// Check if gh CLI is available
 	if !ghclient.CheckGHCLIAvailable() {
-		return fmt.Errorf("gh CLI is not installed. Install it from https://cli.github.com/")
+		return errors.WithHint(
+			errors.New(errors.ErrorTypeGitHub, "gh CLI is not installed"),
+			"Install gh CLI from https://cli.github.com/",
+		)
 	}
 
 	if !ghclient.CheckGHAuthenticated() {
-		return fmt.Errorf("gh CLI is not authenticated. Run: gh auth login")
+		return errors.WithHint(
+			errors.New(errors.ErrorTypeGitHub, "gh CLI is not authenticated"),
+			"Run 'gh auth login' to authenticate with GitHub",
+		)
 	}
 
 	out.Success("gh CLI is available and authenticated ✓")
@@ -81,7 +88,7 @@ func runGitHubCreate(cmd *cobra.Command, args []string) error {
 
 	err := client.CreateRepositoryViaGH(repoName, createDescription, createPrivate)
 	if err != nil {
-		return fmt.Errorf("failed to create repository: %w", err)
+		return errors.Wrap(errors.ErrorTypeGitHub, "failed to create GitHub repository", err)
 	}
 
 	if !out.IsJSON() {

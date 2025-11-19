@@ -3,6 +3,8 @@ package scenarios
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/lcgerke/githelper/internal/constants"
 )
 
 // RepositoryState represents the complete classified state of a repository
@@ -198,8 +200,8 @@ func DefaultDetectionOptions() DetectionOptions {
 		SkipBranches:          false,
 		MaxBranches:           100, // Prevent extreme ref counts from hanging
 		BinarySizeThresholdMB: 50.0, // 50MB threshold
-		FetchTimeout:          30 * time.Second,
-		RemoteCheckTimeout:    5 * time.Second,
+		FetchTimeout:          constants.DefaultFetchTimeout,
+		RemoteCheckTimeout:    constants.QuickOperationTimeout,
 	}
 }
 

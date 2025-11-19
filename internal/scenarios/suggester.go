@@ -2,6 +2,9 @@ package scenarios
 
 import (
 	"fmt"
+	"sort"
+
+	"github.com/lcgerke/githelper/internal/constants"
 )
 
 // ============================================================================
@@ -117,104 +120,13 @@ func suggestSyncFixes(sync SyncState, coreRemote, githubRemote string) []Fix {
 		return nil // Perfect sync
 
 	case "S2": // Local ahead (full or partial)
-		var remoteName string
-		var aheadCount int
-		var description string
-
-		// Determine which remote to suggest pushing to
-		if sync.PartialSync {
-			remoteName = sync.AvailableRemote
-			if sync.LocalAheadOfCore > 0 {
-				aheadCount = sync.LocalAheadOfCore
-			} else {
-				aheadCount = sync.LocalAheadOfGitHub
-			}
-			description = fmt.Sprintf("Local has %d unpushed commits to %s", aheadCount, remoteName)
-		} else {
-			// Full sync - push to both remotes
-			remoteName = coreRemote
-			aheadCount = sync.LocalAheadOfCore
-			description = "Local has unpushed commits"
-		}
-
-		return []Fix{{
-			ScenarioID:  "S2",
-			Description: description,
-			Command:     fmt.Sprintf("git push %s %s", remoteName, sync.Branch),
-			Operation: &PushOperation{
-				Remote:  remoteName,
-				Refspec: sync.Branch,
-			},
-			AutoFixable: true,
-			Priority:    4,
-			Reason:      "Push local commits to remote",
-		}}
+		return extractSyncS2Fix(sync, coreRemote)
 
 	case "S3": // Local behind (full or partial)
-		var remoteName string
-		var behindCount int
-		var description string
-
-		if sync.PartialSync {
-			remoteName = sync.AvailableRemote
-			if sync.LocalBehindCore > 0 {
-				behindCount = sync.LocalBehindCore
-			} else {
-				behindCount = sync.LocalBehindGitHub
-			}
-			description = fmt.Sprintf("Remote %s has %d commits not in local", remoteName, behindCount)
-		} else {
-			remoteName = coreRemote
-			behindCount = sync.LocalBehindCore
-			description = "Remotes have commits local doesn't have"
-		}
-
-		return []Fix{{
-			ScenarioID:  "S3",
-			Description: description,
-			Command:     fmt.Sprintf("git pull %s %s", remoteName, sync.Branch),
-			Operation: &PullOperation{
-				Remote: remoteName,
-				Branch: sync.Branch,
-			},
-			AutoFixable: true,
-			Priority:    4,
-			Reason:      "Pull updates from remote",
-		}}
+		return extractSyncS3Fix(sync, coreRemote)
 
 	case "S4": // Diverged or Local ahead of GitHub only
-		// Check if this is partial sync (two-way divergence)
-		if sync.PartialSync {
-			var remoteName string
-			if sync.AvailableRemote != "" {
-				remoteName = sync.AvailableRemote
-			} else {
-				remoteName = "remote"
-			}
-			return []Fix{{
-				ScenarioID:  "S4",
-				Description: fmt.Sprintf("Local diverged from %s - manual merge required", remoteName),
-				Command:     fmt.Sprintf("git pull %s %s --rebase", remoteName, sync.Branch),
-				Operation:   nil,
-				AutoFixable: false,
-				Priority:    2,
-				Reason:      "Branch has diverged - manual intervention needed",
-			}}
-		}
-
-		// Full sync: Local ahead of GitHub only
-		return []Fix{{
-			ScenarioID:  "S4",
-			Description: "GitHub is behind (partial push failure)",
-			Command:     fmt.Sprintf("git push %s %s", githubRemote, sync.Branch),
-			Operation: &PushOperation{
-				Remote:  githubRemote,
-				Refspec: sync.Branch,
-			},
-			AutoFixable: true,
-			Priority:    2,
-			Reason:      "Sync GitHub with local and Core",
-		}}
+		return extractSyncS4Fix(sync, githubRemote)
 
 	case "S5": // Local ahead of Core only
 		return []Fix{{
@@ -259,38 +171,10 @@ func suggestSyncFixes(sync SyncState, coreRemote, githubRemote string) []Fix {
 		}}
 
 	case "S8": // GitHub ahead of Core and local
-		return []Fix{{
-			ScenarioID:  "S8",
-			Description: "GitHub has commits not in Core or local",
-			Command:     fmt.Sprintf("git pull %s %s && git push %s %s", githubRemote, sync.Branch, coreRemote, sync.Branch),
-			Operation: &CompositeOperation{
-				Operations: []Operation{
-					&PullOperation{Remote: githubRemote, Branch: sync.Branch},
-					&PushOperation{Remote: coreRemote, Refspec: sync.Branch},
-				},
-				StopOnError: true,
-			},
-			AutoFixable: false,
-			Priority:    2,
-			Reason:      "Manual intervention: pull from GitHub, then push to Core",
-		}}
+		return extractSyncS8S9Fix("S8", sync, coreRemote, githubRemote)
 
 	case "S9": // Core ahead of GitHub and local
-		return []Fix{{
-			ScenarioID:  "S9",
-			Description: "Core has commits not in GitHub or local",
-			Command:     fmt.Sprintf("git pull %s %s && git push %s %s", coreRemote, sync.Branch, githubRemote, sync.Branch),
-			Operation: &CompositeOperation{
-				Operations: []Operation{
-					&PullOperation{Remote: coreRemote, Branch: sync.Branch},
-					&PushOperation{Remote: githubRemote, Refspec: sync.Branch},
-				},
-				StopOnError: true,
-			},
-			AutoFixable: false,
-			Priority:    2,
-			Reason:      "Manual intervention: pull from Core, then push to GitHub",
-		}}
+		return extractSyncS8S9Fix("S9", sync, coreRemote, githubRemote)
 
 	case "S10", "S11", "S12", "S13": // Divergence scenarios
 		return []Fix{{
@@ -318,7 +202,7 @@ func suggestSyncFixes(sync SyncState, coreRemote, githubRemote string) []Fix {
 		return []Fix{{
 			ScenarioID:  "S_NA_DETACHED",
 			Description: "Detached HEAD - checkout a branch",
-			Command:     "git checkout main",
+			Command:     fmt.Sprintf("git checkout %s", constants.DefaultBranch),
 			Operation:   nil,
 			AutoFixable: false,
 			Priority:    3,
@@ -328,6 +212,145 @@ func suggestSyncFixes(sync SyncState, coreRemote, githubRemote string) []Fix {
 	default:
 		return nil
 	}
+}
+
+// extractSyncS2Fix handles S2: Local ahead (full or partial)
+func extractSyncS2Fix(sync SyncState, coreRemote string) []Fix {
+	var remoteName string
+	var aheadCount int
+	var description string
+
+	// Determine which remote to suggest pushing to
+	if sync.PartialSync {
+		remoteName = sync.AvailableRemote
+		if sync.LocalAheadOfCore > 0 {
+			aheadCount = sync.LocalAheadOfCore
+		} else {
+			aheadCount = sync.LocalAheadOfGitHub
+		}
+		description = fmt.Sprintf("Local has %d unpushed commits to %s", aheadCount, remoteName)
+	} else {
+		// Full sync - push to both remotes
+		remoteName = coreRemote
+		aheadCount = sync.LocalAheadOfCore
+		description = "Local has unpushed commits"
+	}
+
+	return []Fix{{
+		ScenarioID:  "S2",
+		Description: description,
+		Command:     fmt.Sprintf("git push %s %s", remoteName, sync.Branch),
+		Operation: &PushOperation{
+			Remote:  remoteName,
+			Refspec: sync.Branch,
+		},
+		AutoFixable: true,
+		Priority:    4,
+		Reason:      "Push local commits to remote",
+	}}
+}
+
+// extractSyncS3Fix handles S3: Local behind (full or partial)
+func extractSyncS3Fix(sync SyncState, coreRemote string) []Fix {
+	var remoteName string
+	var behindCount int
+	var description string
+
+	if sync.PartialSync {
+		remoteName = sync.AvailableRemote
+		if sync.LocalBehindCore > 0 {
+			behindCount = sync.LocalBehindCore
+		} else {
+			behindCount = sync.LocalBehindGitHub
+		}
+		description = fmt.Sprintf("Remote %s has %d commits not in local", remoteName, behindCount)
+	} else {
+		remoteName = coreRemote
+		behindCount = sync.LocalBehindCore
+		description = "Remotes have commits local doesn't have"
+	}
+
+	return []Fix{{
+		ScenarioID:  "S3",
+		Description: description,
+		Command:     fmt.Sprintf("git pull %s %s", remoteName, sync.Branch),
+		Operation: &PullOperation{
+			Remote: remoteName,
+			Branch: sync.Branch,
+		},
+		AutoFixable: true,
+		Priority:    4,
+		Reason:      "Pull updates from remote",
+	}}
+}
+
+// extractSyncS4Fix handles S4: Diverged or Local ahead of GitHub only
+func extractSyncS4Fix(sync SyncState, githubRemote string) []Fix {
+	// Check if this is partial sync (two-way divergence)
+	if sync.PartialSync {
+		var remoteName string
+		if sync.AvailableRemote != "" {
+			remoteName = sync.AvailableRemote
+		} else {
+			remoteName = "remote"
+		}
+		return []Fix{{
+			ScenarioID:  "S4",
+			Description: fmt.Sprintf("Local diverged from %s - manual merge required", remoteName),
+			Command:     fmt.Sprintf("git pull %s %s --rebase", remoteName, sync.Branch),
+			Operation:   nil,
+			AutoFixable: false,
+			Priority:    2,
+			Reason:      "Branch has diverged - manual intervention needed",
+		}}
+	}
+
+	// Full sync: Local ahead of GitHub only
+	return []Fix{{
+		ScenarioID:  "S4",
+		Description: "GitHub is behind (partial push failure)",
+		Command:     fmt.Sprintf("git push %s %s", githubRemote, sync.Branch),
+		Operation: &PushOperation{
+			Remote:  githubRemote,
+			Refspec: sync.Branch,
+		},
+		AutoFixable: true,
+		Priority:    2,
+		Reason:      "Sync GitHub with local and Core",
+	}}
+}
+
+// extractSyncS8S9Fix handles S8 and S9: Remote ahead of both Core and local
+func extractSyncS8S9Fix(scenarioID string, sync SyncState, coreRemote, githubRemote string) []Fix {
+	var description, pullRemote, pushRemote string
+
+	if scenarioID == "S8" {
+		// S8: GitHub ahead of Core and local
+		description = "GitHub has commits not in Core or local"
+		pullRemote = githubRemote
+		pushRemote = coreRemote
+	} else {
+		// S9: Core ahead of GitHub and local
+		description = "Core has commits not in GitHub or local"
+		pullRemote = coreRemote
+		pushRemote = githubRemote
+	}
+
+	return []Fix{{
+		ScenarioID:  scenarioID,
+		Description: description,
+		Command:     fmt.Sprintf("git pull %s %s && git push %s %s", pullRemote, sync.Branch, pushRemote, sync.Branch),
+		Operation: &CompositeOperation{
+			Operations: []Operation{
+				&PullOperation{Remote: pullRemote, Branch: sync.Branch},
+				&PushOperation{Remote: pushRemote, Refspec: sync.Branch},
+			},
+			StopOnError: true,
+		},
+		AutoFixable: false,
+		Priority:    2,
+		Reason:      fmt.Sprintf("Manual intervention: pull from %s, then push to %s", pullRemote, pushRemote),
+	}}
 }
 
 // suggestWorkingTreeFixes suggests fixes for working tree scenarios (W1-W5)
@@ -420,7 +443,7 @@ func suggestCorruptionFixes(corr CorruptionState) []Fix {
 			Description: "Missing git objects - repository corruption",
 			Command:     "git fetch --all or re-clone repository",
 			Operation: &FetchOperation{
-				Remote: "origin",
+				Remote: constants.DefaultCoreRemote,
 			},
 			AutoFixable: false,
 			Priority:    1,
@@ -564,13 +587,8 @@ func suggestBranchFixes(branch BranchState, coreRemote, githubRemote string) []F
 
 // PrioritizeFixes sorts fixes by priority (1=critical, 5=low)
 func PrioritizeFixes(fixes []Fix) []Fix {
-	// Simple sort by priority
-	for i := 0; i < len(fixes)-1; i++ {
-		for j := i + 1; j < len(fixes); j++ {
-			if fixes[i].Priority > fixes[j].Priority {
-				fixes[i], fixes[j] = fixes[j], fixes[i]
-			}
-		}
-	}
+	sort.Slice(fixes, func(i, j int) bool {
+		return fixes[i].Priority < fixes[j].Priority
+	})
 	return fixes
 }

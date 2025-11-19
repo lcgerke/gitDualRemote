@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/lcgerke/githelper/internal/config"
+	"github.com/lcgerke/githelper/internal/constants"
+	"github.com/lcgerke/githelper/internal/errors"
 	"github.com/lcgerke/githelper/internal/git"
 	ghclient "github.com/lcgerke/githelper/internal/github"
 	"github.com/lcgerke/githelper/internal/hooks"
@@ -68,13 +70,13 @@ func runGitHubSetup(cmd *cobra.Command, args []string) error {
 	// Initialize config manager
 	cfgMgr, err := config.NewManager(ctx, "")
 	if err != nil {
-		return fmt.Errorf("failed to initialize config: %w", err)
+		return errors.Wrap(errors.ErrorTypeConfig, "failed to initialize config manager", err)
 	}
 
 	// Get configuration
 	cfg, fromCache, err := cfgMgr.GetConfig()
 	if err != nil {
-		return fmt.Errorf("failed to get config: %w", err)
+		return errors.Wrap(errors.ErrorTypeConfig, "failed to get configuration from Vault", err)
 	}
 
 	// Show config status
@@ -91,12 +93,12 @@ func runGitHubSetup(cmd *cobra.Command, args []string) error {
 	// Get repository from state
 	stateMgr, err := state.NewManager("")
 	if err != nil {
-		return fmt.Errorf("failed to initialize state manager: %w", err)
+		return errors.Wrap(errors.ErrorTypeState, "failed to initialize state manager", err)
 	}
 
 	repo, err := stateMgr.GetRepository(repoName)
 	if err != nil {
-		return fmt.Errorf("repository not found in state: %w. Create it first with 'githelper repo create'", err)
+		return errors.RepositoryNotFound(repoName)
 	}
 
 	// Use config GitHub username if not specified
@@ -104,7 +106,7 @@ func runGitHubSetup(cmd *cobra.Command, args []string) error {
 		githubUser = cfg.GitHubUsername
 	}
 	if githubUser == "" {
-		return fmt.Errorf("GitHub username not specified (use --user or configure in Vault)")
+		return errors.InvalidConfiguration("github_username", "not specified (use --user flag or configure in Vault)")
 	}
 
 	// Use repo name if GitHub repo name not specified
@@ -116,7 +118,7 @@ func runGitHubSetup(cmd *cobra.Command, args []string) error {
 	out.Info("Retrieving SSH key from Vault...")
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return fmt.Errorf("failed to get home directory: %w", err)
+		return errors.Wrap(errors.ErrorTypeFileSystem, "failed to get home directory", err)
 	}
 
 	sshDir := filepath.Join(homeDir, ".ssh")
@@ -124,12 +126,12 @@ func runGitHubSetup(cmd *cobra.Command, args []string) error {
 	// Download key to disk
 	vaultClient, err := vault.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create vault client: %w", err)
+		return errors.Wrap(errors.ErrorTypeVault, "failed to create Vault client", err)
 	}
 
 	privateKeyPath, err := vaultClient.DownloadSSHKey(repoName, sshDir)
 	if err != nil {
-		return fmt.Errorf("failed to download SSH key: %w", err)
+		return errors.Wrap(errors.ErrorTypeVault, "failed to download SSH key from Vault", err)
 	}
 	out.Success(fmt.Sprintf("SSH key downloaded to %s", privateKeyPath))
 
@@ -137,7 +139,7 @@ func runGitHubSetup(cmd *cobra.Command, args []string) error {
 	out.Info("Configuring repository-local SSH...")
 	gitClient := git.NewClient(repo.Path)
 	if err := gitClient.ConfigureSSH(privateKeyPath); err != nil {
-		return fmt.Errorf("failed to configure SSH: %w", err)
+		return errors.Wrap(errors.ErrorTypeGit, "failed to configure SSH for repository", err)
 	}
 	out.Success("Configured repository-local SSH")
 
@@ -145,7 +147,7 @@ func runGitHubSetup(cmd *cobra.Command, args []string) error {
 	out.Info("Retrieving GitHub PAT from Vault...")
 	pat, err := cfgMgr.GetPAT(repoName)
 	if err != nil {
-		return fmt.Errorf("failed to get PAT from Vault: %w", err)
+		return errors.Wrap(errors.ErrorTypeVault, "failed to retrieve GitHub PAT from Vault", err)
 	}
 
 	// Create GitHub client
@@ -154,7 +156,7 @@ func runGitHubSetup(cmd *cobra.Command, args []string) error {
 	// Test GitHub connection
 	out.Info("Testing GitHub connection...")
 	if err := ghClient.TestConnection(); err != nil {
-		return fmt.Errorf("GitHub connection test failed: %w", err)
+		return errors.GitHubAuthFailed(err)
 	}
 	out.Success("GitHub connection verified")
 
@@ -162,7 +164,7 @@ func runGitHubSetup(cmd *cobra.Command, args []string) error {
 	ghRepoURL := fmt.Sprintf("git@github.com:%s/%s.git", githubUser, githubRepo)
 	exists, err := ghClient.RepositoryExists(githubUser, githubRepo)
 	if err != nil {
-		return fmt.Errorf("failed to check if repository exists: %w", err)
+		return errors.NetworkError("checking GitHub repository existence", err)
 	}
 
 	if !exists {
@@ -174,19 +176,22 @@ func runGitHubSetup(cmd *cobra.Command, args []string) error {
 				out.Info("Using gh CLI for repository creation")
 				err := ghClient.CreateRepositoryViaGH(githubRepo, fmt.Sprintf("%s repository", repoName), privateRepo)
 				if err != nil {
-					return fmt.Errorf("failed to create GitHub repository via gh CLI: %w", err)
+					return errors.Wrap(errors.ErrorTypeGitHub, "failed to create GitHub repository via gh CLI", err)
 				}
 			} else {
 				// Fall back to API method (requires PAT)
 				out.Info("Using GitHub API for repository creation")
 				_, err := ghClient.CreateRepository(githubRepo, fmt.Sprintf("%s repository", repoName), privateRepo)
 				if err != nil {
-					return fmt.Errorf("failed to create GitHub repository: %w", err)
+					return errors.Wrap(errors.ErrorTypeGitHub, "failed to create GitHub repository via API", err)
 				}
 			}
 			out.Success(fmt.Sprintf("Created GitHub repository: https://github.com/%s/%s", githubUser, githubRepo))
 		} else {
-			return fmt.Errorf("GitHub repository %s/%s does not exist. Use --create to create it", githubUser, githubRepo)
+			return errors.WithHint(
+				errors.New(errors.ErrorTypeGitHub, fmt.Sprintf("GitHub repository %s/%s does not exist", githubUser, githubRepo)),
+				"Use --create flag to create the repository automatically",
+			)
 		}
 	} else {
 		out.Success(fmt.Sprintf("GitHub repository exists: %s/%s", githubUser, githubRepo))
@@ -197,17 +202,17 @@ func runGitHubSetup(cmd *cobra.Command, args []string) error {
 	bareRepoURL := repo.Remote
 
 	// Setup dual-push: one git push → pushes to both bare and GitHub
-	if err := gitClient.SetupDualPush("origin", bareRepoURL, bareRepoURL, ghRepoURL); err != nil {
-		return fmt.Errorf("failed to setup dual-push: %w", err)
+	if err := gitClient.SetupDualPush(constants.DefaultCoreRemote, bareRepoURL, bareRepoURL, ghRepoURL); err != nil {
+		return errors.Wrap(errors.ErrorTypeGit, "failed to setup dual-push configuration", err)
 	}
 
 	// Verify dual-push configuration
-	verified, err := gitClient.VerifyDualPush("origin", bareRepoURL, ghRepoURL)
+	verified, err := gitClient.VerifyDualPush(constants.DefaultCoreRemote, bareRepoURL, ghRepoURL)
 	if err != nil {
-		return fmt.Errorf("failed to verify dual-push: %w", err)
+		return errors.Wrap(errors.ErrorTypeGit, "failed to verify dual-push configuration", err)
 	}
 	if !verified {
-		return fmt.Errorf("dual-push verification failed")
+		return errors.New(errors.ErrorTypeGit, "dual-push verification failed - remote URLs do not match expected configuration")
 	}
 
 	out.Success("Configured dual-push remotes")
@@ -220,7 +225,7 @@ func runGitHubSetup(cmd *cobra.Command, args []string) error {
 		hooksMgr := hooks.NewManager(repo.Path)
 
 		if err := hooksMgr.Install(); err != nil {
-			return fmt.Errorf("failed to install hooks: %w", err)
+			return errors.Wrap(errors.ErrorTypeGit, "failed to install git hooks", err)
 		}
 
 		// Check if backups were created
@@ -246,7 +251,7 @@ func runGitHubSetup(cmd *cobra.Command, args []string) error {
 	repo.GitHub.SyncStatus = "synced"
 
 	if err := stateMgr.AddRepository(repoName, repo); err != nil {
-		return fmt.Errorf("failed to update state: %w", err)
+		return errors.Wrap(errors.ErrorTypeState, "failed to update repository state", err)
 	}
 
 	if !out.IsJSON() {
