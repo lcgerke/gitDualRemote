@@ -3,8 +3,10 @@ package vault
 import (
 	"context"
 	"fmt"
-	"time"
+	"os"
 
+	"github.com/lcgerke/githelper/internal/constants"
+	"github.com/lcgerke/githelper/internal/errors"
 	vault "github.com/hashicorp/vault/api"
 )
 
@@ -21,12 +23,16 @@ type Client struct {
 func NewClient(ctx context.Context) (*Client, error) {
 	config := vault.DefaultConfig()
 	if config == nil {
-		return nil, fmt.Errorf("failed to create default vault config")
+		return nil, errors.New(errors.ErrorTypeVault, "failed to create default Vault configuration")
 	}
 
 	client, err := vault.NewClient(config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create vault client: %w", err)
+		vaultAddr := os.Getenv("VAULT_ADDR")
+		if vaultAddr == "" {
+			vaultAddr = "http://127.0.0.1:8200"
+		}
+		return nil, errors.VaultUnreachable(vaultAddr, err)
 	}
 
 	return &Client{
@@ -39,11 +45,14 @@ func NewClient(ctx context.Context) (*Client, error) {
 func (c *Client) GetSecret(path string) (map[string]interface{}, error) {
 	secret, err := c.client.KVv2("secret").Get(c.ctx, path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read secret at %s: %w", path, err)
+		return nil, errors.Wrap(errors.ErrorTypeVault, fmt.Sprintf("failed to read secret at %s", path), err)
 	}
 
 	if secret == nil || secret.Data == nil {
-		return nil, fmt.Errorf("no data found at %s", path)
+		return nil, errors.WithHint(
+			errors.New(errors.ErrorTypeVault, fmt.Sprintf("no data found at secret path: %s", path)),
+			"Check that the secret exists in Vault and you have permission to read it",
+		)
 	}
 
 	return secret.Data, nil
@@ -53,7 +62,7 @@ func (c *Client) GetSecret(path string) (map[string]interface{}, error) {
 func (c *Client) PutSecret(path string, data map[string]interface{}) error {
 	_, err := c.client.KVv2("secret").Put(c.ctx, path, data)
 	if err != nil {
-		return fmt.Errorf("failed to write secret at %s: %w", path, err)
+		return errors.Wrap(errors.ErrorTypeVault, fmt.Sprintf("failed to write secret at %s", path), err)
 	}
 
 	return nil
@@ -61,7 +70,7 @@ func (c *Client) PutSecret(path string, data map[string]interface{}) error {
 
 // IsReachable checks if Vault server is reachable
 func (c *Client) IsReachable() bool {
-	ctx, cancel := context.WithTimeout(c.ctx, 2*time.Second)
+	ctx, cancel := context.WithTimeout(c.ctx, constants.BranchOperationTimeout)
 	defer cancel()
 
 	_, err := c.client.Sys().HealthWithContext(ctx)
@@ -120,7 +129,10 @@ func (c *Client) GetSSHKey(repoName string) (*SSHKey, error) {
 	// Fall back to default key
 	data, err = c.GetSecret("githelper/github/default_ssh")
 	if err != nil {
-		return nil, fmt.Errorf("no SSH key found (tried repo-specific and default): %w", err)
+		return nil, errors.WithHint(
+			errors.Wrap(errors.ErrorTypeVault, "no SSH key found in Vault", err),
+			"Add an SSH key to Vault at secret/githelper/github/default_ssh with fields 'private_key' and 'public_key'",
+		)
 	}
 
 	return parseSSHKey(data)
@@ -146,14 +158,20 @@ func (c *Client) GetPAT(repoName string) (string, error) {
 	// Fall back to default PAT
 	data, err = c.GetSecret("githelper/github/default_pat")
 	if err != nil {
-		return "", fmt.Errorf("no PAT found (tried repo-specific and default): %w", err)
+		return "", errors.WithHint(
+			errors.Wrap(errors.ErrorTypeVault, "no GitHub PAT found in Vault", err),
+			"Add a GitHub Personal Access Token to Vault at secret/githelper/github/default_pat with field 'token'",
+		)
 	}
 
 	if token, ok := data["token"].(string); ok {
 		return token, nil
 	}
 
-	return "", fmt.Errorf("PAT data missing 'token' field")
+	return "", errors.WithHint(
+		errors.New(errors.ErrorTypeVault, "PAT secret missing required 'token' field"),
+		"Ensure the Vault secret has a 'token' field with your GitHub Personal Access Token",
+	)
 }
 
 func parseSSHKey(data map[string]interface{}) (*SSHKey, error) {
@@ -161,7 +179,10 @@ func parseSSHKey(data map[string]interface{}) (*SSHKey, error) {
 
 	privateKey, ok := data["private_key"].(string)
 	if !ok {
-		return nil, fmt.Errorf("SSH key data missing 'private_key' field")
+		return nil, errors.WithHint(
+			errors.New(errors.ErrorTypeVault, "SSH key secret missing required 'private_key' field"),
+			"Ensure the Vault secret has a 'private_key' field with your SSH private key",
+		)
 	}
 	key.PrivateKey = privateKey
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/lcgerke/githelper/internal/constants"
 	"github.com/lcgerke/githelper/internal/git"
 	"github.com/lcgerke/githelper/internal/state"
 	"github.com/lcgerke/githelper/internal/ui"
@@ -64,7 +65,7 @@ func runGitHubStatus(cmd *cobra.Command, args []string) error {
 
 	// Check git remote configuration
 	gitClient := git.NewClient(repo.Path)
-	pushURLs, err := gitClient.GetPushURLs("origin")
+	pushURLs, err := gitClient.GetPushURLs(constants.DefaultCoreRemote)
 	if err != nil {
 		pushURLs = []string{}
 	}
@@ -73,7 +74,7 @@ func runGitHubStatus(cmd *cobra.Command, args []string) error {
 	if updateState {
 		// Try to check real divergence
 		// Use main branch by default
-		status, err := gitClient.CheckDivergence("origin", "origin", "main")
+		status, err := gitClient.CheckDivergence(constants.DefaultCoreRemote, constants.DefaultCoreRemote, constants.DefaultBranch)
 		if err == nil {
 			// Update state based on actual status
 			if status.InSync {

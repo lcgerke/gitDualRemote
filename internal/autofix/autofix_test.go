@@ -1,7 +1,9 @@
 package autofix
 
 import (
+	"context"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 	"time"
@@ -77,8 +79,15 @@ func TestDetectIssues(t *testing.T) {
 	t.Run("MissingHooks", func(t *testing.T) {
 		// Create a temporary git repository
 		repoDir := filepath.Join(tmpDir, "test-git-repo")
-		if err := os.MkdirAll(filepath.Join(repoDir, ".git", "hooks"), 0755); err != nil {
-			t.Fatalf("Failed to create git repo: %v", err)
+		if err := os.MkdirAll(repoDir, 0755); err != nil {
+			t.Fatalf("Failed to create repo dir: %v", err)
+		}
+
+		// Initialize git repository properly using git init
+		cmd := exec.CommandContext(context.Background(), "git", "init")
+		cmd.Dir = repoDir
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("Failed to init git repo: %v", err)
 		}
 
 		// Add repository to state

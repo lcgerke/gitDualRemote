@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lcgerke/githelper/internal/constants"
 	"github.com/lcgerke/githelper/internal/git"
 )
 
@@ -123,7 +124,7 @@ func (c *Classifier) Detect() (*RepositoryState, error) {
 			defaultBranch, _ = gc.GetDefaultBranch(c.githubRemote)
 		}
 		if defaultBranch == "" {
-			defaultBranch = "main" // fallback
+			defaultBranch = constants.DefaultBranch // fallback
 		}
 		state.DefaultBranch = defaultBranch
 
